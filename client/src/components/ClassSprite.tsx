@@ -92,8 +92,10 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
   
   const jobId = JOB_IDS[jobClass] ?? JOB_IDS["Novice"]; // Default to Novice
   // Fixed paths based on ROCalc asset structure from inspector
-  const spriteUrl = `https://www.rocalc.cc/img/jobs/male/${jobId}.png`;
-  const iconUrl = `https://www.rocalc.cc/img/jobs/icons/${jobId}.png`;
+  // Sprites are at: https://www.rocalc.cc/assets/jobs/male/{jobId}.png
+  // Icons are at: https://www.rocalc.cc/assets/jobs/icons/{jobId}.png
+  const spriteUrl = `https://www.rocalc.cc/assets/jobs/male/${jobId}.png`;
+  const iconUrl = `https://www.rocalc.cc/assets/jobs/icons/${jobId}.png`;
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden gap-2 bg-[#0a1018]/30">
@@ -116,12 +118,12 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
         <img 
           src={iconUrl} 
           alt={`${jobClass} icon`}
-          className="w-8 h-8 object-contain pixelated"
+          className="w-10 h-10 object-contain pixelated"
           onError={(e) => {
             // Try fallback path if first one fails
             if (!e.currentTarget.dataset.triedFallback) {
               e.currentTarget.dataset.triedFallback = 'true';
-              e.currentTarget.src = `https://www.rocalc.cc/assets/jobs/icons/${jobId}.png`;
+              e.currentTarget.src = `https://www.rocalc.cc/img/jobs/icons/${jobId}.png`;
             } else {
               e.currentTarget.style.display = 'none';
             }
