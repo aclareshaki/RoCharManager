@@ -91,38 +91,36 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
   const [error, setError] = useState(false);
   
   const jobId = JOB_IDS[jobClass] ?? JOB_IDS["Novice"]; // Default to Novice
-  // Using official sprites from RO Calc for 4th jobs and common classes
+  // Fixed paths based on ROCalc asset structure
   const spriteUrl = `https://www.rocalc.cc/assets/jobs/male/${jobId}.png`;
   const iconUrl = `https://www.rocalc.cc/assets/jobs/icons/${jobId}.png`;
 
-  if (error || !jobClass) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-[#0a1018]/50 rounded-lg border border-[#2b4e6b] border-dashed">
-        <User className="w-8 h-8 text-[#2b4e6b]" />
-      </div>
-    );
-  }
-
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden gap-2">
+    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden gap-2 bg-[#0a1018]/30">
       {/* Glow effect behind sprite */}
-      <div className="absolute w-12 h-12 bg-[#5a8bbd]/10 blur-xl rounded-full" />
+      <div className="absolute w-24 h-24 bg-[#5a8bbd]/5 blur-2xl rounded-full" />
       
-      {/* Sprite Image */}
+      {/* Sprite Image - No error state to allow background to show if missing */}
       <img 
         src={spriteUrl} 
         alt={alt}
-        className="relative z-10 max-h-[70%] object-contain drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]"
-        onError={() => setError(true)}
+        className="relative z-10 max-h-[120px] object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] transition-opacity duration-300"
+        loading="lazy"
+        onError={(e) => {
+          e.currentTarget.style.opacity = '0';
+          // Fallback to a placeholder icon if sprite fails
+        }}
       />
 
       {/* Class Icon */}
-      <div className="relative z-20 bg-[#1c2b3a]/80 p-1.5 rounded-md border border-[#5a8bbd]/30 shadow-lg">
+      <div className="relative z-20 bg-[#1c2b3a] p-1 rounded border border-[#5a8bbd]/40 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
         <img 
           src={iconUrl} 
           alt={`${jobClass} icon`}
           className="w-8 h-8 object-contain pixelated"
-          onError={(e) => (e.currentTarget.style.display = 'none')}
+          onError={(e) => {
+            e.currentTarget.src = "https://www.rocalc.cc/assets/Poporing.png"; // Fallback to mascot if icon fails
+          }}
         />
       </div>
     </div>
