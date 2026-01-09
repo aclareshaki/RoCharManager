@@ -91,9 +91,9 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
   const [error, setError] = useState(false);
   
   const jobId = JOB_IDS[jobClass] ?? JOB_IDS["Novice"]; // Default to Novice
-  // Using divine-pride static asset server
-  const spriteUrl = `https://www.divine-pride.net/img/jobsprite/en/male/${jobId}.png`;
-  const iconUrl = `https://www.divine-pride.net/img/jobicon/${jobId}.png`;
+  // Using official sprites from RO Calc for 4th jobs and common classes
+  const spriteUrl = `https://www.rocalc.cc/assets/jobs/male/${jobId}.png`;
+  const iconUrl = `https://www.rocalc.cc/assets/jobs/icons/${jobId}.png`;
 
   if (error || !jobClass) {
     return (
