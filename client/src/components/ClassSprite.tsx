@@ -60,6 +60,9 @@ const JOB_IDS: Record<string, number> = {
   "Sura": 4064,
   "Genetic": 4065,
   "Shadow Chaser": 4066,
+  "Kagerou": 4211,
+  "Oboro": 4212,
+  "Rebellion": 4215,
 
   // 4th Class
   "Dragon Knight": 4252,
@@ -74,7 +77,14 @@ const JOB_IDS: Record<string, number> = {
   "Trouvere": 4261,
   "Inquisitor": 4262,
   "Abyss Chaser": 4263,
-  "Elemental Master": 4264
+  "Elemental Master": 4264,
+  "Hyper Novice": 4302,
+  "Spirit Handler": 4303,
+  "Shinkiro": 4304,
+  "Shiranui": 4305,
+  "Night Watch": 4306,
+  "Sky Emperor": 4307,
+  "Soul Ascetic": 4308
 };
 
 export function ClassSprite({ className: jobClass, alt }: { className: string, alt: string }) {
