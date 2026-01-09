@@ -92,7 +92,8 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
   
   const jobId = JOB_IDS[jobClass] ?? JOB_IDS["Novice"]; // Default to Novice
   // Using divine-pride static asset server
-  const spriteUrl = `https://static.divine-pride.net/images/jobs/png/male/${jobId}.png`;
+  const spriteUrl = `https://www.divine-pride.net/img/jobsprite/en/male/${jobId}.png`;
+  const iconUrl = `https://www.divine-pride.net/img/jobicon/${jobId}.png`;
 
   if (error || !jobClass) {
     return (
@@ -103,15 +104,27 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
   }
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden gap-2">
       {/* Glow effect behind sprite */}
       <div className="absolute w-12 h-12 bg-[#5a8bbd]/10 blur-xl rounded-full" />
+      
+      {/* Sprite Image */}
       <img 
         src={spriteUrl} 
         alt={alt}
-        className="relative z-10 max-h-full object-contain drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]"
+        className="relative z-10 max-h-[70%] object-contain drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]"
         onError={() => setError(true)}
       />
+
+      {/* Class Icon */}
+      <div className="relative z-20 bg-[#1c2b3a]/80 p-1.5 rounded-md border border-[#5a8bbd]/30 shadow-lg">
+        <img 
+          src={iconUrl} 
+          alt={`${jobClass} icon`}
+          className="w-8 h-8 object-contain pixelated"
+          onError={(e) => (e.currentTarget.style.display = 'none')}
+        />
+      </div>
     </div>
   );
 }
