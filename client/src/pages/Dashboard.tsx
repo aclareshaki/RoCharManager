@@ -68,7 +68,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen p-4 md:p-8 flex flex-col gap-6">
       {/* Header Area */}
-      <header className="flex flex-col md:flex-row justify-between items-center gap-4">
+      <header className="flex flex-col md:flex-row justify-between items-end gap-4">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-[#1c2b3a] rounded-full border-2 border-[#5a8bbd] shadow-[0_0_15px_rgba(90,139,189,0.3)]">
             <Users className="w-6 h-6 text-[#5a8bbd]" />
@@ -81,12 +81,12 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="flex gap-2 w-full md:w-auto flex-1 md:max-w-xl">
+        <div className="flex gap-2 w-full lg:w-[calc(66.666667%-1rem)]">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2b4e6b]" />
+            <Search className="absolute left-1/2 -translate-x-[110px] top-1/2 -translate-y-1/2 w-4 h-4 text-[#5a8bbd]/40 pointer-events-none" />
             <ROInput 
               placeholder="Search accounts..." 
-              className="pl-9 pr-9"
+              className="pl-10 pr-10 bg-[#0a1018]/80 border-[#2b4e6b] hover:border-[#5a8bbd]/50 transition-all shadow-inner"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
