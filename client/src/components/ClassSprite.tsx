@@ -91,11 +91,9 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
   const [error, setError] = useState(false);
   
   const jobId = JOB_IDS[jobClass] ?? JOB_IDS["Novice"]; // Default to Novice
-  // Attempting to match the exact URL structure observed on ROCalc
-  // They use a dynamic base URL or specific relative paths
-  const spriteUrl = `https://www.rocalc.cc/assets/jobs/male/${jobId}.png`;
-  const iconUrl = `https://www.rocalc.cc/assets/jobs/icons/${jobId}.png`;
-  const fallbackIconUrl = `https://www.rocalc.cc/img/jobs/icons/${jobId}.png`;
+  // Fixed paths based on the exact URL provided by the user
+  const spriteUrl = `https://www.rocalc.cc/assets/demo/images/jobs/jobs_${jobId}.png`;
+  const iconUrl = `https://www.rocalc.cc/assets/demo/images/jobs/icon_jobs_${jobId}.png`;
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden gap-2">
@@ -103,26 +101,20 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
       <img 
         src={spriteUrl} 
         alt={alt}
-        className="relative z-10 max-h-[100px] object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
+        className="relative z-10 max-h-[110px] object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
         onError={(e) => {
           e.currentTarget.style.display = 'none';
         }}
       />
 
-      {/* Class Icon - Minimal container to avoid just seeing a circle/square if image fails */}
+      {/* Class Icon */}
       <div className="relative z-20 flex items-center justify-center">
         <img 
           src={iconUrl} 
           alt={`${jobClass} icon`}
-          className="w-10 h-10 object-contain pixelated"
+          className="w-12 h-12 object-contain pixelated drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
           onError={(e) => {
-            if (!e.currentTarget.dataset.triedFallback) {
-              e.currentTarget.dataset.triedFallback = 'true';
-              e.currentTarget.src = fallbackIconUrl;
-            } else {
-              // If both fail, show a generic icon from lucide (via a separate element or hidden img)
-              e.currentTarget.style.display = 'none';
-            }
+            e.currentTarget.style.display = 'none';
           }}
         />
       </div>
