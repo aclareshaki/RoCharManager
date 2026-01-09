@@ -91,9 +91,9 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
   const [error, setError] = useState(false);
   
   const jobId = JOB_IDS[jobClass] ?? JOB_IDS["Novice"]; // Default to Novice
-  // Fixed paths based on ROCalc asset structure
-  const spriteUrl = `https://www.rocalc.cc/assets/jobs/male/${jobId}.png`;
-  const iconUrl = `https://www.rocalc.cc/assets/jobs/icons/${jobId}.png`;
+  // Fixed paths based on ROCalc asset structure from inspector
+  const spriteUrl = `https://www.rocalc.cc/img/jobs/male/${jobId}.png`;
+  const iconUrl = `https://www.rocalc.cc/img/jobs/icons/${jobId}.png`;
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden gap-2 bg-[#0a1018]/30">
@@ -108,7 +108,6 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
         loading="lazy"
         onError={(e) => {
           e.currentTarget.style.opacity = '0';
-          // Fallback to a placeholder icon if sprite fails
         }}
       />
 
@@ -119,7 +118,13 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
           alt={`${jobClass} icon`}
           className="w-8 h-8 object-contain pixelated"
           onError={(e) => {
-            e.currentTarget.src = "https://www.rocalc.cc/assets/Poporing.png"; // Fallback to mascot if icon fails
+            // Try fallback path if first one fails
+            if (!e.currentTarget.dataset.triedFallback) {
+              e.currentTarget.dataset.triedFallback = 'true';
+              e.currentTarget.src = `https://www.rocalc.cc/assets/jobs/icons/${jobId}.png`;
+            } else {
+              e.currentTarget.style.display = 'none';
+            }
           }}
         />
       </div>
