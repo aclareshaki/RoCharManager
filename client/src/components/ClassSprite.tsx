@@ -91,40 +91,36 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
   const [error, setError] = useState(false);
   
   const jobId = JOB_IDS[jobClass] ?? JOB_IDS["Novice"]; // Default to Novice
-  // Fixed paths based on ROCalc asset structure from inspector
-  // Sprites are at: https://www.rocalc.cc/assets/jobs/male/{jobId}.png
-  // Icons are at: https://www.rocalc.cc/assets/jobs/icons/{jobId}.png
+  // Attempting to match the exact URL structure observed on ROCalc
+  // They use a dynamic base URL or specific relative paths
   const spriteUrl = `https://www.rocalc.cc/assets/jobs/male/${jobId}.png`;
   const iconUrl = `https://www.rocalc.cc/assets/jobs/icons/${jobId}.png`;
+  const fallbackIconUrl = `https://www.rocalc.cc/img/jobs/icons/${jobId}.png`;
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden gap-2 bg-[#0a1018]/30">
-      {/* Glow effect behind sprite */}
-      <div className="absolute w-24 h-24 bg-[#5a8bbd]/5 blur-2xl rounded-full" />
-      
-      {/* Sprite Image - No error state to allow background to show if missing */}
+    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden gap-2">
+      {/* Sprite Image */}
       <img 
         src={spriteUrl} 
         alt={alt}
-        className="relative z-10 max-h-[120px] object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] transition-opacity duration-300"
-        loading="lazy"
+        className="relative z-10 max-h-[100px] object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
         onError={(e) => {
-          e.currentTarget.style.opacity = '0';
+          e.currentTarget.style.display = 'none';
         }}
       />
 
-      {/* Class Icon */}
-      <div className="relative z-20 bg-[#1c2b3a] p-1 rounded border border-[#5a8bbd]/40 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
+      {/* Class Icon - Minimal container to avoid just seeing a circle/square if image fails */}
+      <div className="relative z-20 flex items-center justify-center">
         <img 
           src={iconUrl} 
           alt={`${jobClass} icon`}
           className="w-10 h-10 object-contain pixelated"
           onError={(e) => {
-            // Try fallback path if first one fails
             if (!e.currentTarget.dataset.triedFallback) {
               e.currentTarget.dataset.triedFallback = 'true';
-              e.currentTarget.src = `https://www.rocalc.cc/img/jobs/icons/${jobId}.png`;
+              e.currentTarget.src = fallbackIconUrl;
             } else {
+              // If both fail, show a generic icon from lucide (via a separate element or hidden img)
               e.currentTarget.style.display = 'none';
             }
           }}
