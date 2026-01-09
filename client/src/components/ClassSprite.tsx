@@ -91,9 +91,9 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
   const [error, setError] = useState(false);
   
   const jobId = JOB_IDS[jobClass] ?? JOB_IDS["Novice"]; // Default to Novice
-  // Fixed paths based on the exact URL provided by the user
-  const spriteUrl = `https://www.rocalc.cc/assets/demo/images/jobs/jobs_${jobId}.png`;
-  const iconUrl = `https://www.rocalc.cc/assets/demo/images/jobs/icon_jobs_${jobId}.png`;
+  // Using locally downloaded assets
+  const spriteUrl = `/images/jobs/sprites/jobs_${jobId}.png`;
+  const iconUrl = `/images/jobs/icons/icon_jobs_${jobId}.png`;
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden gap-2">
@@ -103,7 +103,13 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
         alt={alt}
         className="relative z-10 max-h-[110px] object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
         onError={(e) => {
-          e.currentTarget.style.display = 'none';
+          // Fallback to remote if local fails (e.g. not downloaded yet)
+          if (!e.currentTarget.dataset.triedRemote) {
+            e.currentTarget.dataset.triedRemote = 'true';
+            e.currentTarget.src = `https://www.rocalc.cc/assets/demo/images/jobs/jobs_${jobId}.png`;
+          } else {
+            e.currentTarget.style.display = 'none';
+          }
         }}
       />
 
@@ -114,7 +120,13 @@ export function ClassSprite({ className: jobClass, alt }: { className: string, a
           alt={`${jobClass} icon`}
           className="w-12 h-12 object-contain pixelated drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
           onError={(e) => {
-            e.currentTarget.style.display = 'none';
+            // Fallback to remote if local fails
+            if (!e.currentTarget.dataset.triedRemote) {
+              e.currentTarget.dataset.triedRemote = 'true';
+              e.currentTarget.src = `https://www.rocalc.cc/assets/demo/images/jobs/icon_jobs_${jobId}.png`;
+            } else {
+              e.currentTarget.style.display = 'none';
+            }
           }}
         />
       </div>
