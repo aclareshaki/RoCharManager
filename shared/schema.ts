@@ -6,6 +6,7 @@ import { relations } from "drizzle-orm";
 export const accounts = pgTable("accounts", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
 });
 
 export const characters = pgTable("characters", {

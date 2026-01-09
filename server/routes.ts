@@ -55,6 +55,16 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  app.post("/api/accounts/reorder", async (req, res) => {
+    try {
+      const { ids } = z.object({ ids: z.array(z.number()) }).parse(req.body);
+      await storage.updateAccountOrder(ids);
+      res.status(204).send();
+    } catch (err) {
+      res.status(400).json({ message: "Invalid request body" });
+    }
+  });
+
   // Characters
   app.get(api.characters.list.path, async (req, res) => {
     const accountId = req.query.accountId ? Number(req.query.accountId) : undefined;

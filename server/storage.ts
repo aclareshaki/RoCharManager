@@ -18,7 +18,7 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getAccounts(): Promise<Account[]> {
-    return await db.select().from(accounts).orderBy(accounts.id);
+    return await db.select().from(accounts).orderBy(accounts.sortOrder, accounts.id);
   }
 
   async getAccount(id: number): Promise<Account | undefined> {
@@ -31,13 +31,24 @@ export class DatabaseStorage implements IStorage {
     return account;
   }
 
-  async updateAccount(id: number, insertAccount: InsertAccount): Promise<Account | undefined> {
+  async updateAccount(id: number, insertAccount: Partial<InsertAccount>): Promise<Account | undefined> {
     const [account] = await db
       .update(accounts)
       .set(insertAccount)
       .where(eq(accounts.id, id))
       .returning();
     return account;
+  }
+
+  async updateAccountOrder(reorderedIds: number[]): Promise<void> {
+    await db.transaction(async (tx) => {
+      for (let i = 0; i < reorderedIds.length; i++) {
+        await tx
+          .update(accounts)
+          .set({ sortOrder: i })
+          .where(eq(accounts.id, reorderedIds[i]));
+      }
+    });
   }
 
   async deleteAccount(id: number): Promise<void> {

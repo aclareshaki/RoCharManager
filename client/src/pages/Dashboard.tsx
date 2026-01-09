@@ -1,27 +1,56 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAccounts, useDeleteAccount } from "@/hooks/use-accounts";
 import { useCharacters, useDeleteCharacter } from "@/hooks/use-characters";
 import { ROPanel, ROButton, ROInput } from "@/components/ROPanel";
 import { ClassSprite } from "@/components/ClassSprite";
 import { AccountDialog } from "@/components/AccountDialog";
 import { CharacterDialog } from "@/components/CharacterDialog";
-import { Search, Trash2, User, Users, Download, Upload, Edit } from "lucide-react";
+import { Search, Trash2, User, Users, Download, Upload, Edit, GripVertical } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function Dashboard() {
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   
   const { data: accounts, isLoading: isLoadingAccounts } = useAccounts();
+  const [localAccounts, setLocalAccounts] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (accounts) {
+      setLocalAccounts(accounts);
+    }
+  }, [accounts]);
+
   const { data: characters, isLoading: isLoadingCharacters } = useCharacters(selectedAccountId || undefined);
   
   const deleteAccountMutation = useDeleteAccount();
   const deleteCharacterMutation = useDeleteCharacter();
 
-  const filteredAccounts = accounts?.filter(acc => 
+  const filteredAccounts = localAccounts.filter(acc => 
     acc.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  );
+
+  const onDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+
+    const items = Array.from(localAccounts);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setLocalAccounts(items);
+
+    try {
+      await apiRequest("POST", "/api/accounts/reorder", {
+        ids: items.map(a => a.id)
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/accounts"] });
+    } catch (error) {
+      setLocalAccounts(accounts || []);
+    }
+  };
 
   const handleExport = () => {
     if (!accounts) return;
@@ -85,81 +114,94 @@ export default function Dashboard() {
               <p>No accounts found</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              <AnimatePresence>
-                {filteredAccounts.map((account) => (
-                  <motion.div
-                    key={account.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="accounts">
+                {(provided) => (
+                  <div 
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="space-y-2"
                   >
-                    <div 
-                      onClick={() => setSelectedAccountId(account.id)}
-                      className={`
-                        group relative flex items-center justify-between p-3 rounded cursor-pointer transition-all border
-                        ${selectedAccountId === account.id 
-                          ? "bg-[#1c2b3a] border-[#5a8bbd] shadow-[inset_0_0_10px_rgba(90,139,189,0.2)]" 
-                          : "bg-transparent border-transparent hover:bg-[#1c2b3a]/50 hover:border-[#2b4e6b]"
-                        }
-                      `}
-                    >
-                      {/* Active Indicator */}
-                      {selectedAccountId === account.id && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2/3 bg-[#5a8bbd] rounded-r" />
-                      )}
+                    {filteredAccounts.map((account, index) => (
+                      <Draggable key={account.id} draggableId={account.id.toString()} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={`
+                              group relative flex items-center justify-between p-3 rounded cursor-pointer transition-all border
+                              ${selectedAccountId === account.id 
+                                ? "bg-[#1c2b3a] border-[#5a8bbd] shadow-[inset_0_0_10px_rgba(90,139,189,0.2)]" 
+                                : "bg-transparent border-transparent hover:bg-[#1c2b3a]/50 hover:border-[#2b4e6b]"
+                              }
+                              ${snapshot.isDragging ? "opacity-50 scale-105 z-50 bg-[#1c2b3a] border-[#5a8bbd]" : ""}
+                            `}
+                            onClick={() => setSelectedAccountId(account.id)}
+                          >
+                            {/* Active Indicator */}
+                            {selectedAccountId === account.id && (
+                              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2/3 bg-[#5a8bbd] rounded-r" />
+                            )}
 
-                      <div className="pl-3">
-                        <h3 className={`font-bold text-sm ${selectedAccountId === account.id ? "text-white" : "text-[#a0c0e0] group-hover:text-white"}`}>
-                          {account.name}
-                        </h3>
-                        <p className="text-[10px] text-[#5a8bbd] opacity-70">ID: {account.id}</p>
-                      </div>
+                            <div className="flex items-center gap-2 flex-1">
+                              <div {...provided.dragHandleProps} className="p-1 cursor-grab active:cursor-grabbing text-[#2b4e6b] hover:text-[#5a8bbd]">
+                                <GripVertical className="w-4 h-4" />
+                              </div>
+                              <div className="pl-1">
+                                <h3 className={`font-bold text-sm ${selectedAccountId === account.id ? "text-white" : "text-[#a0c0e0] group-hover:text-white"}`}>
+                                  {account.name}
+                                </h3>
+                                <p className="text-[10px] text-[#5a8bbd] opacity-70">ID: {account.id}</p>
+                              </div>
+                            </div>
 
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <AccountDialog 
-                          account={account} 
-                          trigger={
-                            <ROButton variant="icon" size="sm" onClick={(e) => e.stopPropagation()}>
-                              <Edit className="w-3 h-3" />
-                            </ROButton>
-                          } 
-                        />
-                        
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <ROButton variant="icon" size="sm" className="hover:border-red-500 hover:text-red-400" onClick={(e) => e.stopPropagation()}>
-                              <Trash2 className="w-3 h-3" />
-                            </ROButton>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-white">Delete Account?</AlertDialogTitle>
-                              <AlertDialogDescription className="text-[#a0c0e0]">
-                                This will permanently delete <strong>{account.name}</strong> and all associated characters. This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-transparent border-[#2b4e6b] text-[#a0c0e0] hover:bg-white/5 hover:text-white">Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => {
-                                  deleteAccountMutation.mutate(account.id);
-                                  if (selectedAccountId === account.id) setSelectedAccountId(null);
-                                }}
-                                className="bg-red-900/50 border border-red-500 text-red-200 hover:bg-red-800"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <AccountDialog 
+                                account={account} 
+                                trigger={
+                                  <ROButton variant="icon" size="sm" onClick={(e) => e.stopPropagation()}>
+                                    <Edit className="w-3 h-3" />
+                                  </ROButton>
+                                } 
+                              />
+                              
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <ROButton variant="icon" size="sm" className="hover:border-red-500 hover:text-red-400" onClick={(e) => e.stopPropagation()}>
+                                    <Trash2 className="w-3 h-3" />
+                                  </ROButton>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle className="text-white">Delete Account?</AlertDialogTitle>
+                                    <AlertDialogDescription className="text-[#a0c0e0]">
+                                      This will permanently delete <strong>{account.name}</strong> and all associated characters. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel className="bg-transparent border-[#2b4e6b] text-[#a0c0e0] hover:bg-white/5 hover:text-white">Cancel</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={() => {
+                                        deleteAccountMutation.mutate(account.id);
+                                        if (selectedAccountId === account.id) setSelectedAccountId(null);
+                                      }}
+                                      className="bg-red-900/50 border border-red-500 text-red-200 hover:bg-red-800"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           )}
         </ROPanel>
 
