@@ -40,7 +40,7 @@ export function AccountDialog({ account, trigger }: AccountDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <ROButton variant={isEditing ? "icon" : "primary"} size={isEditing ? "sm" : "md"}>
+          <ROButton variant={isEditing ? "icon" : "primary"} size={isEditing ? "sm" : "md"} className={!isEditing ? "min-w-[140px] flex items-center justify-center" : ""}>
             {isEditing ? <Edit className="w-4 h-4" /> : <><Plus className="w-4 h-4 mr-2" /> New Account</>}
           </ROButton>
         )}

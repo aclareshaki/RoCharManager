@@ -49,7 +49,7 @@ export function CharacterDialog({ accountId, character, trigger }: CharacterDial
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <ROButton variant={isEditing ? "icon" : "primary"} size="md">
+          <ROButton variant={isEditing ? "icon" : "primary"} size="md" className={!isEditing ? "min-w-[140px] flex items-center justify-center" : ""}>
             {isEditing ? <Edit className="w-4 h-4" /> : <><Plus className="w-4 h-4 mr-2" /> Add Character</>}
           </ROButton>
         )}

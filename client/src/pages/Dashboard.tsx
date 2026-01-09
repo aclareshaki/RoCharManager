@@ -81,12 +81,12 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="flex gap-2 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
+        <div className="flex gap-2 w-full md:w-auto flex-1 md:max-w-xl">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2b4e6b]" />
             <ROInput 
               placeholder="Search accounts..." 
-              className="pl-9"
+              className="pl-9 pr-9"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

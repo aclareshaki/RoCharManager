@@ -80,7 +80,8 @@ export function ROInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
       className={cn(
         "w-full bg-[#0a1018] border border-[#2b4e6b] text-[#a0c0e0] px-3 py-2 rounded-md",
         "focus:outline-none focus:border-[#5a8bbd] focus:ring-1 focus:ring-[#5a8bbd]/30",
-        "placeholder:text-[#2b4e6b] text-sm transition-colors"
+        "placeholder:text-[#2b4e6b] text-sm transition-colors text-center",
+        props.className
       )}
       {...props}
     />
