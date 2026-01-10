@@ -95,10 +95,9 @@ export default function Dashboard() {
           <div className="w-[1px] h-6 bg-[#2b4e6b]/30 mx-1" />
           <ROButton 
             variant="ghost" 
-            size="icon"
             onClick={handleExport} 
             title="Export Data"
-            className="h-full w-12 hover:bg-[#5a8bbd]/10 text-[#5a8bbd]/60 hover:text-[#5a8bbd] transition-colors border-0"
+            className="h-full w-12 hover:bg-[#5a8bbd]/10 text-[#5a8bbd]/60 hover:text-[#5a8bbd] transition-colors border-0 flex items-center justify-center p-0"
           >
             <Download className="w-5 h-5" />
           </ROButton>
