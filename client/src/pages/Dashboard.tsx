@@ -34,24 +34,38 @@ export default function Dashboard() {
   const deleteCharacterMutation = useDeleteCharacter();
 
   const filteredAccounts = localAccounts.filter(acc => {
-    const matchesAccountName = acc.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const searchLower = searchQuery.toLowerCase();
+    
+    // Heuristic Level Detection from single bar
+    let levelFromSearch = levelFilter;
+    let queryWithoutLevel = searchLower;
+    const levelMatch = searchLower.match(/([><])\s*(\d+)/);
+    if (levelMatch) {
+      levelFromSearch = levelMatch[0].replace(/\s/g, "");
+      queryWithoutLevel = searchLower.replace(levelMatch[0], "").trim();
+    }
+
+    const matchesAccountName = acc.name.toLowerCase().includes(queryWithoutLevel);
     
     // Find characters for this account to check against character filters
     const accountChars = allCharactersData?.filter(c => c.accountId === acc.id) || [];
     
-    const matchesCharName = searchQuery === "" || accountChars.some(c => 
-      c.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCharName = queryWithoutLevel === "" || accountChars.some(c => 
+      c.name.toLowerCase().includes(queryWithoutLevel)
     );
+
+    // If query matches account name or character name, we continue with other filters
+    if (!(matchesAccountName || matchesCharName)) return false;
     
     const matchesClass = classFilter === "" || accountChars.some(c => 
       c.class.toLowerCase().includes(classFilter.toLowerCase())
     );
     
     let matchesLevel = true;
-    if (levelFilter !== "") {
-      const isGreater = levelFilter.startsWith(">");
-      const isLess = levelFilter.startsWith("<");
-      const levelValue = parseInt(levelFilter.replace(/[><]/g, "").trim());
+    if (levelFromSearch !== "") {
+      const isGreater = levelFromSearch.startsWith(">");
+      const isLess = levelFromSearch.startsWith("<");
+      const levelValue = parseInt(levelFromSearch.replace(/[><]/g, "").trim());
       
       if (!isNaN(levelValue)) {
         matchesLevel = accountChars.some(c => {
@@ -62,7 +76,7 @@ export default function Dashboard() {
       }
     }
 
-    return (matchesAccountName || matchesCharName) && matchesClass && matchesLevel;
+    return matchesClass && matchesLevel;
   });
 
   const onDragEnd = async (result: DropResult) => {
@@ -101,7 +115,7 @@ export default function Dashboard() {
     <div className="min-h-screen p-4 md:p-8 flex flex-col gap-6">
       {/* Header Area */}
       <header className="flex flex-col gap-4">
-        <div className="flex flex-col md:flex-row justify-between items-end gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-[#1c2b3a] rounded-full border-2 border-[#5a8bbd] shadow-[0_0_15px_rgba(90,139,189,0.3)]">
               <Users className="w-6 h-6 text-[#5a8bbd]" />
@@ -115,38 +129,64 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            <ROButton variant="outline" onClick={handleExport} title="Export Data" className="h-11 border-[#2b4e6b] text-[#5a8bbd]">
-              <Download className="w-4 h-4 mr-2" />
-              EXPORT
+            <ROButton variant="outline" onClick={handleExport} title="Export Data" className="h-10 border-[#2b4e6b] text-[#5a8bbd] px-3 bg-[#102030]/50 hover:bg-[#5a8bbd]/10">
+              <div className="flex flex-col items-center gap-0.5">
+                <Download className="w-4 h-4" />
+                <span className="text-[10px] font-bold">EXPORT</span>
+              </div>
             </ROButton>
-            <AccountDialog />
+            <AccountDialog trigger={
+              <ROButton className="h-10 px-4 bg-[#2b4e6b] hover:bg-[#3a6a8e] text-white border-0 shadow-lg">
+                <span className="text-xs font-bold">+ NEW ACCOUNT</span>
+              </ROButton>
+            } />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 bg-[#0a1018]/60 border border-[#2b4e6b] rounded-md p-1 shadow-inner">
-          <div className="relative col-span-1 md:col-span-2 h-11">
+        <div className="flex flex-col md:flex-row gap-0 bg-[#0a1018]/80 border border-[#2b4e6b]/50 rounded overflow-hidden shadow-2xl h-11">
+          <div className="flex items-center px-4 bg-[#1c2b3a]/40 border-r border-[#2b4e6b]/30 min-w-[120px]">
+             <span className="text-[10px] font-bold text-[#5a8bbd] tracking-widest uppercase">New Acc</span>
+          </div>
+          <div className="flex items-center px-4 bg-[#1c2b3a]/40 border-r border-[#2b4e6b]/30 min-w-[120px]">
+             <span className="text-[10px] font-bold text-[#5a8bbd] tracking-widest uppercase">Export</span>
+          </div>
+          
+          <div className="flex-1 flex items-center relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5a8bbd]/40 pointer-events-none" />
             <ROInput 
-              placeholder="SEARCH ACCOUNT OR CHARACTER..." 
-              className="h-full border-0 bg-transparent pl-11 pr-4 text-left placeholder:text-[#2b4e6b]/60 placeholder:uppercase placeholder:tracking-widest"
+              placeholder="SEARCH ACCOUNT, CHARACTER, CLASS, LEVEL (e.g. >250)..." 
+              className="h-full border-0 bg-transparent pl-11 pr-4 text-left placeholder:text-[#2b4e6b]/40 placeholder:uppercase placeholder:text-[10px] placeholder:tracking-widest"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="h-11">
-            <ROInput 
-              placeholder="CLASS (e.g. Biolo)" 
-              className="h-full border-0 bg-transparent px-4 text-left placeholder:text-[#2b4e6b]/60 placeholder:uppercase placeholder:tracking-widest"
-              value={classFilter}
-              onChange={(e) => setClassFilter(e.target.value)}
-            />
-          </div>
-          <div className="h-11">
-            <ROInput 
-              placeholder="LEVEL (e.g. >250, <50)" 
-              className="h-full border-0 bg-transparent px-4 text-left placeholder:text-[#2b4e6b]/60 placeholder:uppercase placeholder:tracking-widest"
-              value={levelFilter}
-              onChange={(e) => setLevelFilter(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSearchQuery(val);
+                
+                // Reset sub-filters if clearing
+                if (val === "") {
+                   setLevelFilter("");
+                   setClassFilter("");
+                   return;
+                }
+
+                // Heuristic parsing for level
+                const levelMatch = val.match(/([><])\s*(\d+)/);
+                if (levelMatch) {
+                   setLevelFilter(levelMatch[0].replace(/\s/g, ""));
+                } else {
+                   setLevelFilter("");
+                }
+
+                // Heuristic parsing for class: look for common RO class names or keywords
+                // This is a simplified version, ideally would check against a list
+                const words = val.split(" ");
+                const commonClasses = ["biolo", "cardinal", "inquisitor", "meister", "abyss", "chaser", "dragon", "knight", "imperial", "guard", "shadow", "cross", "arch", "bishop", "warlock", "sorcerer", "ranger", "minstrel", "wanderer", "shura", "genetic", "mechanic", "royal", "guard", "sura", "guillotine", "cross"];
+                const foundClass = words.find(w => commonClasses.includes(w.toLowerCase()));
+                if (foundClass) {
+                   setClassFilter(foundClass);
+                } else {
+                   setClassFilter("");
+                }
+              }}
             />
           </div>
         </div>
