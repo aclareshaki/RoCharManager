@@ -202,7 +202,7 @@ export default function Dashboard() {
 
                               {/* Quick Glance Characters - Displayed below name/ID */}
                               <div className="mt-1 flex flex-wrap gap-2 pl-7 min-h-[24px]">
-                                {accountCharacters.length > 0 ? (
+                                {accountCharacters && accountCharacters.length > 0 ? (
                                   accountCharacters.map(char => (
                                     <div key={char.id} className="flex items-center gap-1.5 bg-[#0a1018]/60 px-2 py-1 rounded border border-[#5a8bbd]/20 hover:border-[#5a8bbd]/40 transition-colors shadow-sm">
                                       <div className="w-5 h-5 flex items-center justify-center">
@@ -215,7 +215,10 @@ export default function Dashboard() {
                                     </div>
                                   ))
                                 ) : (
-                                  <span className="text-[9px] text-[#2b4e6b] italic flex items-center h-full">No characters found</span>
+                                  <div className="flex items-center gap-1.5 opacity-30">
+                                    <div className="w-5 h-5 rounded bg-[#0a1018]/40 border border-[#2b4e6b]/30" />
+                                    <span className="text-[9px] text-[#2b4e6b] italic">Empty</span>
+                                  </div>
                                 )}
                               </div>
                             </div>
