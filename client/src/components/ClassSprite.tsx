@@ -87,13 +87,31 @@ const JOB_IDS: Record<string, number> = {
   "Soul Ascetic": 4308
 };
 
-export function ClassSprite({ className: jobClass, alt }: { className: string, alt: string }) {
+export function ClassSprite({ className: jobClass, alt, isIconOnly = false }: { className: string, alt: string, isIconOnly?: boolean }) {
   const [error, setError] = useState(false);
   
   const jobId = JOB_IDS[jobClass] ?? JOB_IDS["Novice"]; // Default to Novice
   // Using locally downloaded assets
   const spriteUrl = `/images/jobs/sprites/jobs_${jobId}.png`;
   const iconUrl = `/images/jobs/icons/icon_jobs_${jobId}.png`;
+
+  if (isIconOnly) {
+    return (
+      <img 
+        src={iconUrl} 
+        alt={`${jobClass} icon`}
+        className="w-full h-full object-contain pixelated drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
+        onError={(e) => {
+          if (!e.currentTarget.dataset.triedRemote) {
+            e.currentTarget.dataset.triedRemote = 'true';
+            e.currentTarget.src = `https://www.rocalc.cc/assets/demo/images/jobs/icon_jobs_${jobId}.png`;
+          } else {
+            e.currentTarget.style.display = 'none';
+          }
+        }}
+      />
+    );
+  }
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden gap-2">
