@@ -117,8 +117,8 @@ export default function Dashboard() {
       <header className="flex flex-col gap-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 flex items-center justify-center bg-[#1c2b3a] rounded-full border-2 border-[#5a8bbd] shadow-[0_0_15px_rgba(90,139,189,0.3)] overflow-hidden">
-              <img src="/assets/cow_logo.png" alt="Cow Logo" className="w-full h-full object-cover" />
+            <div className="w-14 h-14 flex items-center justify-center bg-[#1c2b3a] rounded-full border-2 border-[#5a8bbd] shadow-[0_0_15px_rgba(90,139,189,0.3)] overflow-hidden">
+              <img src="/assets/cow_logo_final.png" alt="MuhRO Cow Logo" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-[family-name:var(--font-pixel)] text-[#cedce7] tracking-tight">
