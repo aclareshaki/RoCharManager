@@ -82,18 +82,25 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="flex gap-2 w-full lg:w-[calc(66.666667%-1rem)]">
-          <div className="relative flex-1">
-            <Search className="absolute left-1/2 -translate-x-[110px] top-1/2 -translate-y-1/2 w-4 h-4 text-[#5a8bbd]/40 pointer-events-none" />
+        <div className="flex items-center gap-0 w-full lg:w-auto flex-1 max-w-2xl bg-[#0a1018]/60 border border-[#2b4e6b] rounded-md p-1 shadow-inner h-11">
+          <div className="relative flex-1 h-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5a8bbd]/40 pointer-events-none" />
             <ROInput 
-              placeholder="Search accounts..." 
-              className="pl-10 pr-10 bg-[#0a1018]/80 border-[#2b4e6b] hover:border-[#5a8bbd]/50 transition-all shadow-inner"
+              placeholder="SEARCH ACCOUNTS..." 
+              className="h-full border-0 bg-transparent pl-11 pr-4 text-left placeholder:text-[#2b4e6b]/60 placeholder:uppercase placeholder:tracking-widest"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <ROButton variant="icon" onClick={handleExport} title="Export Data">
-            <Download className="w-4 h-4" />
+          <div className="w-[1px] h-6 bg-[#2b4e6b]/30 mx-1" />
+          <ROButton 
+            variant="ghost" 
+            size="icon"
+            onClick={handleExport} 
+            title="Export Data"
+            className="h-full w-12 hover:bg-[#5a8bbd]/10 text-[#5a8bbd]/60 hover:text-[#5a8bbd] transition-colors border-0"
+          >
+            <Download className="w-5 h-5" />
           </ROButton>
         </div>
       </header>
