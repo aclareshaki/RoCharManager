@@ -51,6 +51,7 @@ const JOB_IDS: Record<string, number> = {
   "Warlock": 4055,
   "Ranger": 4056,
   "Arch Bishop": 4057,
+  "Arc Bishop": 4057,
   "Mechanic": 4058,
   "Guillotine Cross": 4059,
   "Royal Guard": 4060,
