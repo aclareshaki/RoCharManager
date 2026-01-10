@@ -16,7 +16,7 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   
   const { data: accounts, isLoading: isLoadingAccounts } = useAccounts();
-  const { data: allCharacters } = useCharacters();
+  const { data: allCharacters } = useCharacters(undefined);
   const [localAccounts, setLocalAccounts] = useState<any[]>([]);
 
   useEffect(() => {
@@ -202,7 +202,7 @@ export default function Dashboard() {
                                       <div className="w-4 h-4 flex items-center justify-center">
                                         <ClassSprite className={char.class} alt={char.name} isIconOnly />
                                       </div>
-                                      <span className="text-[10px] font-mono text-[#cedce7] opacity-80">{char.lvl}</span>
+                                      <span className="text-[10px] font-mono text-[#cedce7] opacity-80">{char.name} {char.lvl}</span>
                                     </div>
                                   ))
                                 ) : (
