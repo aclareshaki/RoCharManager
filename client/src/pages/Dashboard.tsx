@@ -14,9 +14,11 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 export default function Dashboard() {
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [levelFilter, setLevelFilter] = useState<string>("");
+  const [classFilter, setClassFilter] = useState<string>("");
   
   const { data: accounts, isLoading: isLoadingAccounts } = useAccounts();
-  const { data: allCharactersData } = useCharacters(); // Fetch all characters for summaries
+  const { data: allCharactersData } = useCharacters();
   const [localAccounts, setLocalAccounts] = useState<any[]>([]);
 
   useEffect(() => {
@@ -31,9 +33,37 @@ export default function Dashboard() {
   const deleteAccountMutation = useDeleteAccount();
   const deleteCharacterMutation = useDeleteCharacter();
 
-  const filteredAccounts = localAccounts.filter(acc => 
-    acc.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredAccounts = localAccounts.filter(acc => {
+    const matchesAccountName = acc.name.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Find characters for this account to check against character filters
+    const accountChars = allCharactersData?.filter(c => c.accountId === acc.id) || [];
+    
+    const matchesCharName = searchQuery === "" || accountChars.some(c => 
+      c.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    
+    const matchesClass = classFilter === "" || accountChars.some(c => 
+      c.class.toLowerCase().includes(classFilter.toLowerCase())
+    );
+    
+    let matchesLevel = true;
+    if (levelFilter !== "") {
+      const isGreater = levelFilter.startsWith(">");
+      const isLess = levelFilter.startsWith("<");
+      const levelValue = parseInt(levelFilter.replace(/[><]/g, "").trim());
+      
+      if (!isNaN(levelValue)) {
+        matchesLevel = accountChars.some(c => {
+          if (isGreater) return c.lvl > levelValue;
+          if (isLess) return c.lvl < levelValue;
+          return c.lvl === levelValue;
+        });
+      }
+    }
+
+    return (matchesAccountName || matchesCharName) && matchesClass && matchesLevel;
+  });
 
   const onDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
@@ -70,38 +100,55 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen p-4 md:p-8 flex flex-col gap-6">
       {/* Header Area */}
-      <header className="flex flex-col md:flex-row justify-between items-end gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-[#1c2b3a] rounded-full border-2 border-[#5a8bbd] shadow-[0_0_15px_rgba(90,139,189,0.3)]">
-            <Users className="w-6 h-6 text-[#5a8bbd]" />
+      <header className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-end gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-[#1c2b3a] rounded-full border-2 border-[#5a8bbd] shadow-[0_0_15px_rgba(90,139,189,0.3)]">
+              <Users className="w-6 h-6 text-[#5a8bbd]" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-[family-name:var(--font-pixel)] text-[#cedce7] tracking-tight">
+                MUH RO <span className="text-[#5a8bbd]">KAFRA CORP</span>
+              </h1>
+              <p className="text-[#a0c0e0] text-xs uppercase tracking-widest opacity-70">Account Management System</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-[family-name:var(--font-pixel)] text-[#cedce7] tracking-tight">
-              MUH RO <span className="text-[#5a8bbd]">KAFRA CORP</span>
-            </h1>
-            <p className="text-[#a0c0e0] text-xs uppercase tracking-widest opacity-70">Account Management System</p>
+
+          <div className="flex items-center gap-2">
+            <ROButton variant="outline" onClick={handleExport} title="Export Data" className="h-11 border-[#2b4e6b] text-[#5a8bbd]">
+              <Download className="w-4 h-4 mr-2" />
+              EXPORT
+            </ROButton>
+            <AccountDialog />
           </div>
         </div>
 
-        <div className="flex items-center gap-0 w-full lg:w-auto flex-1 max-w-2xl bg-[#0a1018]/60 border border-[#2b4e6b] rounded-md p-1 shadow-inner h-11">
-          <div className="relative flex-1 h-full">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 bg-[#0a1018]/60 border border-[#2b4e6b] rounded-md p-1 shadow-inner">
+          <div className="relative col-span-1 md:col-span-2 h-11">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5a8bbd]/40 pointer-events-none" />
             <ROInput 
-              placeholder="SEARCH ACCOUNTS..." 
+              placeholder="SEARCH ACCOUNT OR CHARACTER..." 
               className="h-full border-0 bg-transparent pl-11 pr-4 text-left placeholder:text-[#2b4e6b]/60 placeholder:uppercase placeholder:tracking-widest"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="w-[1px] h-6 bg-[#2b4e6b]/30 mx-1" />
-          <ROButton 
-            variant="ghost" 
-            onClick={handleExport} 
-            title="Export Data"
-            className="h-full w-12 hover:bg-[#5a8bbd]/10 text-[#5a8bbd]/60 hover:text-[#5a8bbd] transition-colors border-0 flex items-center justify-center p-0"
-          >
-            <Download className="w-5 h-5" />
-          </ROButton>
+          <div className="h-11">
+            <ROInput 
+              placeholder="CLASS (e.g. Biolo)" 
+              className="h-full border-0 bg-transparent px-4 text-left placeholder:text-[#2b4e6b]/60 placeholder:uppercase placeholder:tracking-widest"
+              value={classFilter}
+              onChange={(e) => setClassFilter(e.target.value)}
+            />
+          </div>
+          <div className="h-11">
+            <ROInput 
+              placeholder="LEVEL (e.g. >250, <50)" 
+              className="h-full border-0 bg-transparent px-4 text-left placeholder:text-[#2b4e6b]/60 placeholder:uppercase placeholder:tracking-widest"
+              value={levelFilter}
+              onChange={(e) => setLevelFilter(e.target.value)}
+            />
+          </div>
         </div>
       </header>
 

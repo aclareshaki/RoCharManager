@@ -6,7 +6,6 @@ export function useCharacters(accountId?: number) {
   return useQuery({
     queryKey: accountId ? [api.characters.list.path, accountId] : [api.characters.list.path],
     queryFn: async () => {
-      // We pass accountId as a query param if it exists
       const url = accountId 
         ? `${api.characters.list.path}?accountId=${accountId}` 
         : api.characters.list.path;
