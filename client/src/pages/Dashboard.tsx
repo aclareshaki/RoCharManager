@@ -129,26 +129,23 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            <ROButton variant="outline" onClick={handleExport} title="Export Data" className="h-10 border-[#2b4e6b] text-[#5a8bbd] px-3 bg-[#102030]/50 hover:bg-[#5a8bbd]/10">
-              <div className="flex flex-col items-center gap-0.5">
-                <Download className="w-4 h-4" />
-                <span className="text-[10px] font-bold">EXPORT</span>
-              </div>
-            </ROButton>
-            <AccountDialog trigger={
-              <ROButton className="h-10 px-4 bg-[#2b4e6b] hover:bg-[#3a6a8e] text-white border-0 shadow-lg">
-                <span className="text-xs font-bold">+ NEW ACCOUNT</span>
-              </ROButton>
-            } />
+            {/* Action buttons removed from here as they are now in the search bar */}
           </div>
         </div>
 
         <div className="flex flex-col md:flex-row gap-0 bg-[#0a1018]/80 border border-[#2b4e6b]/50 rounded overflow-hidden shadow-2xl h-11">
-          <div className="flex items-center px-4 bg-[#1c2b3a]/40 border-r border-[#2b4e6b]/30 min-w-[120px]">
-             <span className="text-[10px] font-bold text-[#5a8bbd] tracking-widest uppercase">New Acc</span>
-          </div>
-          <div className="flex items-center px-4 bg-[#1c2b3a]/40 border-r border-[#2b4e6b]/30 min-w-[120px]">
-             <span className="text-[10px] font-bold text-[#5a8bbd] tracking-widest uppercase">Export</span>
+          <div className="flex items-center">
+            <AccountDialog trigger={
+              <button className="flex items-center px-4 h-full bg-[#1c2b3a]/40 border-r border-[#2b4e6b]/30 hover:bg-[#5a8bbd]/10 transition-colors group">
+                <span className="text-[10px] font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">New Acc</span>
+              </button>
+            } />
+            <button 
+              onClick={handleExport}
+              className="flex items-center px-4 h-full bg-[#1c2b3a]/40 border-r border-[#2b4e6b]/30 hover:bg-[#5a8bbd]/10 transition-colors group"
+            >
+              <span className="text-[10px] font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">Export</span>
+            </button>
           </div>
           
           <div className="flex-1 flex items-center relative">
@@ -176,8 +173,7 @@ export default function Dashboard() {
                    setLevelFilter("");
                 }
 
-                // Heuristic parsing for class: look for common RO class names or keywords
-                // This is a simplified version, ideally would check against a list
+                // Heuristic parsing for class
                 const words = val.split(" ");
                 const commonClasses = ["biolo", "cardinal", "inquisitor", "meister", "abyss", "chaser", "dragon", "knight", "imperial", "guard", "shadow", "cross", "arch", "bishop", "warlock", "sorcerer", "ranger", "minstrel", "wanderer", "shura", "genetic", "mechanic", "royal", "guard", "sura", "guillotine", "cross"];
                 const foundClass = words.find(w => commonClasses.includes(w.toLowerCase()));
