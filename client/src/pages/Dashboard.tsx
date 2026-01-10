@@ -76,7 +76,7 @@ export default function Dashboard() {
           </div>
           <div>
             <h1 className="text-2xl md:text-3xl font-[family-name:var(--font-pixel)] text-[#cedce7] tracking-tight">
-              KAFRA <span className="text-[#5a8bbd]">CORP</span>
+              MUH RO <span className="text-[#5a8bbd]">KAFRA CORP</span>
             </h1>
             <p className="text-[#a0c0e0] text-xs uppercase tracking-widest opacity-70">Account Management System</p>
           </div>
