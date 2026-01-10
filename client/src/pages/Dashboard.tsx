@@ -129,25 +129,15 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Action buttons removed from here as they are now in the search bar */}
+            <AccountDialog trigger={
+              <ROButton className="h-10 px-4 bg-[#2b4e6b] hover:bg-[#3a6a8e] text-white border-0 shadow-lg">
+                <span className="text-xs font-bold">+ NEW ACCOUNT</span>
+              </ROButton>
+            } />
           </div>
         </div>
 
         <div className="flex flex-col md:flex-row gap-0 bg-[#0a1018]/80 border border-[#2b4e6b]/50 rounded overflow-hidden shadow-2xl h-11">
-          <div className="flex items-center">
-            <AccountDialog trigger={
-              <button className="flex items-center px-4 h-full bg-[#1c2b3a]/40 border-r border-[#2b4e6b]/30 hover:bg-[#5a8bbd]/10 transition-colors group">
-                <span className="text-[10px] font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">New Acc</span>
-              </button>
-            } />
-            <button 
-              onClick={handleExport}
-              className="flex items-center px-4 h-full bg-[#1c2b3a]/40 border-r border-[#2b4e6b]/30 hover:bg-[#5a8bbd]/10 transition-colors group"
-            >
-              <span className="text-[10px] font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">Export</span>
-            </button>
-          </div>
-          
           <div className="flex-1 flex items-center relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5a8bbd]/40 pointer-events-none" />
             <ROInput 
@@ -184,6 +174,16 @@ export default function Dashboard() {
                 }
               }}
             />
+          </div>
+
+          <div className="flex items-center">
+            <button 
+              onClick={handleExport}
+              className="flex items-center px-4 h-full bg-[#1c2b3a]/40 border-l border-[#2b4e6b]/30 hover:bg-[#5a8bbd]/10 transition-colors group"
+            >
+              <Download className="w-4 h-4 text-[#5a8bbd]/60 group-hover:text-[#5a8bbd] mr-2" />
+              <span className="text-[10px] font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">Export</span>
+            </button>
           </div>
         </div>
       </header>
