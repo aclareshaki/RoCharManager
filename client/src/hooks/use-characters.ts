@@ -4,8 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export function useCharacters(accountId?: number) {
   return useQuery({
-    queryKey: [api.characters.list.path, accountId],
-    enabled: !!accountId, // Only fetch if accountId is provided
+    queryKey: accountId ? [api.characters.list.path, accountId] : [api.characters.list.path],
     queryFn: async () => {
       // We pass accountId as a query param if it exists
       const url = accountId 

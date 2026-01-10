@@ -25,7 +25,8 @@ export default function Dashboard() {
     }
   }, [accounts]);
 
-  const { data: characters, isLoading: isLoadingCharacters } = useCharacters(selectedAccountId || undefined);
+  const { data: characters } = useCharacters(selectedAccountId || undefined);
+  const isLoadingCharacters = selectedAccountId && !characters;
   
   const deleteAccountMutation = useDeleteAccount();
   const deleteCharacterMutation = useDeleteCharacter();
