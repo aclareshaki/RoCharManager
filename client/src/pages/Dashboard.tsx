@@ -148,7 +148,7 @@ export default function Dashboard() {
                                     <GripVertical className="w-4 h-4" />
                                   </div>
                                   <div className="pl-1">
-                                    <h3 className={`font-bold text-sm ${selectedAccountId === account.id ? "text-white" : "text-[#a0c0e0] group-hover:text-white"}`}>
+                                    <h3 className={`font-bold text-sm leading-tight ${selectedAccountId === account.id ? "text-white" : "text-[#a0c0e0] group-hover:text-white"}`}>
                                       {account.name}
                                     </h3>
                                     <p className="text-[10px] text-[#5a8bbd] opacity-70">ID: {account.id}</p>
@@ -194,19 +194,21 @@ export default function Dashboard() {
                                 </div>
                               </div>
 
-                              {/* Quick Glance Characters */}
-                              {accountCharacters.length > 0 && (
-                                <div className="mt-2 pt-2 border-t border-[#2b4e6b]/30 flex flex-wrap gap-2">
-                                  {accountCharacters.map(char => (
-                                    <div key={char.id} className="flex items-center gap-1 bg-[#0a1018]/50 px-1.5 py-0.5 rounded border border-[#2b4e6b]/20">
-                                      <div className="w-5 h-5 flex items-center justify-center">
+                              {/* Quick Glance Characters - Displayed below name/ID */}
+                              <div className="mt-1 flex flex-wrap gap-2 pl-7 min-h-[24px]">
+                                {accountCharacters.length > 0 ? (
+                                  accountCharacters.map(char => (
+                                    <div key={char.id} className="flex items-center gap-1 bg-[#0a1018]/40 px-1.5 py-0.5 rounded border border-[#5a8bbd]/10 hover:border-[#5a8bbd]/30 transition-colors">
+                                      <div className="w-4 h-4 flex items-center justify-center">
                                         <ClassSprite className={char.class} alt={char.name} isIconOnly />
                                       </div>
-                                      <span className="text-[10px] font-mono text-[#cedce7]">{char.lvl}</span>
+                                      <span className="text-[10px] font-mono text-[#cedce7] opacity-80">{char.lvl}</span>
                                     </div>
-                                  ))}
-                                </div>
-                              )}
+                                  ))
+                                ) : (
+                                  <span className="text-[9px] text-[#2b4e6b] italic flex items-center h-full">No characters</span>
+                                )}
+                              </div>
                             </div>
                           )}
                         </Draggable>
