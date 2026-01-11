@@ -54,12 +54,13 @@ export default function Dashboard() {
       c.name.toLowerCase().includes(queryWithoutLevel)
     );
 
-    // If query matches account name or character name, we continue with other filters
-    if (!(matchesAccountName || matchesCharName)) return false;
-    
+    // If query matches account name or character name or class, we continue
+    // Check if the current search query (minus level stuff) contains a class name
     const matchesClass = classFilter === "" || accountChars.some(c => 
       c.class.toLowerCase().includes(classFilter.toLowerCase())
     );
+
+    if (!(matchesAccountName || matchesCharName || matchesClass)) return false;
     
     let matchesLevel = true;
     if (levelFromSearch !== "") {
