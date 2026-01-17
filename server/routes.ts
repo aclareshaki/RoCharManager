@@ -112,6 +112,54 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Import data
+  app.post("/api/import", async (req, res) => {
+    try {
+      const data = z.object({
+        accounts: z.array(z.object({
+          name: z.string(),
+          sortOrder: z.number().optional().default(0),
+          oldId: z.number().optional(),
+        })).optional(),
+        characters: z.array(z.object({
+          accountId: z.number(),
+          oldAccountId: z.number().optional(),
+          name: z.string(),
+          class: z.string(),
+          lvl: z.number(),
+        })).optional(),
+      }).parse(req.body);
+
+      const result = await storage.importData({
+        accounts: data.accounts,
+        characters: data.characters,
+      });
+
+      res.status(200).json({
+        message: "Data imported successfully",
+        imported: {
+          accounts: result.accounts.length,
+          characters: result.characters.length,
+        },
+      });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      
+      // Ensure we always return JSON, not HTML
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      console.error("Import error:", err);
+      return res.status(500).json({
+        message: "Failed to import data",
+        error: errorMessage,
+      });
+    }
+  });
+
   // Seed data
   const accountsList = await storage.getAccounts();
   if (accountsList.length === 0) {

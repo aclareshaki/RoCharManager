@@ -1,14 +1,13 @@
 import { defineConfig } from "drizzle-kit";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL, ensure the database is provisioned");
-}
-
 export default defineConfig({
-  out: "./migrations",
+  // Ruta a donde están definidos tus personajes y tablas
   schema: "./shared/schema.ts",
-  dialect: "postgresql",
+  // Carpeta donde se guardarán los cambios de la base de datos
+  out: "./drizzle",
+  // Usamos el driver de libsql para que funcione en Windows sin errores
+  dialect: "sqlite",
   dbCredentials: {
-    url: process.env.DATABASE_URL,
+    url: "file:./local.db",
   },
 });

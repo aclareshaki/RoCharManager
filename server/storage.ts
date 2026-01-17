@@ -85,6 +85,78 @@ export class DatabaseStorage implements IStorage {
   async deleteCharacter(id: number): Promise<void> {
     await db.delete(characters).where(eq(characters.id, id));
   }
+
+  async importData(data: { 
+    accounts?: Array<InsertAccount & { oldId?: number }>, 
+    characters?: Array<InsertCharacter & { oldAccountId?: number }> 
+  }): Promise<{ accounts: Account[], characters: Character[] }> {
+    const importedAccounts: Account[] = [];
+    const importedCharacters: Character[] = [];
+    const accountIdMap = new Map<number, number>(); // oldId -> newId
+
+    await db.transaction(async (tx) => {
+      // Import accounts
+      if (data.accounts && data.accounts.length > 0) {
+        for (const accountData of data.accounts) {
+          const { oldId, ...accountInsert } = accountData;
+          const [account] = await tx.insert(accounts).values(accountInsert).returning();
+          importedAccounts.push(account);
+          // Map old ID to new ID if provided
+          if (oldId !== undefined) {
+            accountIdMap.set(oldId, account.id);
+          }
+        }
+      }
+
+      // Import characters
+      if (data.characters && data.characters.length > 0) {
+        for (const charData of data.characters) {
+          const { oldAccountId, accountId: oldAccountIdFromData, ...charInsert } = charData;
+          
+          // Priority: Use oldAccountId for mapping if provided
+          let finalAccountId: number | undefined;
+          
+          if (oldAccountId !== undefined) {
+            // Try to map oldAccountId to new ID
+            if (accountIdMap.has(oldAccountId)) {
+              finalAccountId = accountIdMap.get(oldAccountId)!;
+            } else {
+              // Skip characters with oldAccountId that couldn't be mapped
+              console.warn(`Skipping character ${charData.name}: account ID ${oldAccountId} not found in imported accounts`);
+              continue;
+            }
+          } else if (oldAccountIdFromData !== undefined) {
+            // If no oldAccountId but we have accountId, try to map it
+            if (accountIdMap.has(oldAccountIdFromData)) {
+              finalAccountId = accountIdMap.get(oldAccountIdFromData)!;
+            } else {
+              // Use the accountId as-is (might be an existing account)
+              finalAccountId = oldAccountIdFromData;
+            }
+          }
+          
+          // Verify accountId exists before inserting
+          if (finalAccountId !== undefined) {
+            const accountExists = await tx.select().from(accounts).where(eq(accounts.id, finalAccountId)).limit(1);
+            if (accountExists.length === 0) {
+              console.warn(`Skipping character ${charData.name}: account ID ${finalAccountId} does not exist`);
+              continue;
+            }
+            charInsert.accountId = finalAccountId;
+          } else {
+            // No valid accountId found
+            console.warn(`Skipping character ${charData.name}: no valid accountId found`);
+            continue;
+          }
+          
+          const [character] = await tx.insert(characters).values(charInsert).returning();
+          importedCharacters.push(character);
+        }
+      }
+    });
+
+    return { accounts: importedAccounts, characters: importedCharacters };
+  }
 }
 
 export const storage = new DatabaseStorage();
