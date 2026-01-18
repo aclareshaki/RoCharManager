@@ -5,7 +5,7 @@ import { ROPanel, ROButton, ROInput } from "@/components/ROPanel";
 import { ClassSprite } from "@/components/ClassSprite";
 import { AccountDialog } from "@/components/AccountDialog";
 import { CharacterDialog } from "@/components/CharacterDialog";
-import { Search, Trash2, User, Users, Download, Upload, Edit, GripVertical } from "lucide-react";
+import { Search, Trash2, User, Users, Download, Upload, Edit, GripVertical, Grid3x3, List, Skull, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -17,6 +17,14 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState<string>("");
   const [classFilter, setClassFilter] = useState<string>("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [instanceMode, setInstanceMode] = useState(false);
+  
+  // Instancias disponibles
+  const instances = ["LOF", "NGH", "HGH", "GHC"];
+  
+  // Estado de instancias por personaje (characterId -> instanceName -> checked)
+  const [instanceStatus, setInstanceStatus] = useState<Record<number, Record<string, boolean>>>({});
   
   const { data: accounts, isLoading: isLoadingAccounts } = useAccounts();
   const { data: allCharactersData } = useCharacters();
@@ -31,55 +39,92 @@ export default function Dashboard() {
   const { data: characters } = useCharacters(selectedAccountId || undefined);
   const isLoadingCharacters = selectedAccountId && !characters;
   
+  // Función helper para verificar si un personaje cumple todas las condiciones
+  const matchesAllConditions = (char: any, conditions: string[]): boolean => {
+    return conditions.every(condition => {
+      const cond = condition.trim();
+      if (!cond) return true; // Condición vacía siempre se cumple
+      
+      // Verificar si es una condición de instancia negada (-LOF, -NGH, etc.)
+      // Significa: nivel >= 250 Y NO tener el tick marcado para esa instancia
+      const instanceMatch = cond.match(/^-([A-Z]+)$/i);
+      if (instanceMatch) {
+        const instanceName = instanceMatch[1].toUpperCase();
+        // Verificar que la instancia existe en nuestra lista
+        if (instances.includes(instanceName)) {
+          // Debe tener nivel >= 250
+          if (char.lvl < 250) return false;
+          // Y NO debe tener el tick marcado para esa instancia
+          const hasTick = instanceStatus[char.id]?.[instanceName] || false;
+          return !hasTick;
+        }
+        return false;
+      }
+      
+      // Verificar si es una condición de nivel (>99, <50, =100)
+      const levelMatch = cond.match(/^([><=])\s*(\d+)$/);
+      if (levelMatch) {
+        const operator = levelMatch[1];
+        const levelValue = parseInt(levelMatch[2]);
+        
+        if (isNaN(levelValue)) return false;
+        
+        switch (operator) {
+          case '>': return char.lvl > levelValue;
+          case '<': return char.lvl < levelValue;
+          case '=': return char.lvl === levelValue;
+          default: return false;
+        }
+      }
+      
+      // Si no es condición de nivel, buscar en nombre o clase
+      const condLower = cond.toLowerCase();
+      const matchesCharName = char.name.toLowerCase().includes(condLower);
+      const matchesClass = char.class.toLowerCase().includes(condLower);
+      
+      return matchesCharName || matchesClass;
+    });
+  };
+
+  // Filtrar personajes por la búsqueda actual con soporte para múltiples condiciones con +
+  const filteredCharacters = characters?.filter(char => {
+    const searchLower = searchQuery.trim();
+    if (searchLower === "") return true;
+    
+    // Dividir por + para obtener múltiples condiciones
+    const conditions = searchLower.split('+').map(c => c.trim()).filter(c => c !== '');
+    
+    // Todas las condiciones deben cumplirse (AND)
+    return matchesAllConditions(char, conditions);
+  }) || [];
+  
   const deleteAccountMutation = useDeleteAccount();
   const deleteCharacterMutation = useDeleteCharacter();
   const { toast } = useToast();
 
   const filteredAccounts = localAccounts.filter(acc => {
-    const searchLower = searchQuery.toLowerCase();
+    const searchLower = searchQuery.trim();
     
-    // Heuristic Level Detection from single bar
-    let levelFromSearch = levelFilter;
-    let queryWithoutLevel = searchLower;
-    const levelMatch = searchLower.match(/([><])\s*(\d+)/);
-    if (levelMatch) {
-      levelFromSearch = levelMatch[0].replace(/\s/g, "");
-      queryWithoutLevel = searchLower.replace(levelMatch[0], "").trim();
-    }
-
-    const matchesAccountName = acc.name.toLowerCase().includes(queryWithoutLevel);
+    // Si no hay búsqueda, mostrar todas las cuentas
+    if (searchLower === "") return true;
     
-    // Find characters for this account to check against character filters
+    // Dividir por + para obtener múltiples condiciones
+    const conditions = searchLower.split('+').map(c => c.trim()).filter(c => c !== '');
+    
+    // Buscar personajes de esta cuenta
     const accountChars = allCharactersData?.filter(c => c.accountId === acc.id) || [];
     
-    const matchesCharName = queryWithoutLevel === "" || accountChars.some(c => 
-      c.name.toLowerCase().includes(queryWithoutLevel)
-    );
-
-    // If query matches account name or character name or class, we continue
-    // Check if the current search query (minus level stuff) contains a class name
-    const matchesClass = classFilter === "" || accountChars.some(c => 
-      c.class.toLowerCase().includes(classFilter.toLowerCase())
-    );
-
-    if (!(matchesAccountName || matchesCharName || matchesClass)) return false;
+    // La cuenta se muestra si tiene algún personaje que cumpla TODAS las condiciones
+    const hasMatchingChars = accountChars.some(char => matchesAllConditions(char, conditions));
     
-    let matchesLevel = true;
-    if (levelFromSearch !== "") {
-      const isGreater = levelFromSearch.startsWith(">");
-      const isLess = levelFromSearch.startsWith("<");
-      const levelValue = parseInt(levelFromSearch.replace(/[><]/g, "").trim());
-      
-      if (!isNaN(levelValue)) {
-        matchesLevel = accountChars.some(c => {
-          if (isGreater) return c.lvl > levelValue;
-          if (isLess) return c.lvl < levelValue;
-          return c.lvl === levelValue;
-        });
-      }
-    }
-
-    return matchesClass && matchesLevel;
+    // También verificar si el nombre de la cuenta coincide con alguna condición de texto
+    const matchesAccountName = conditions.some(cond => {
+      const levelMatch = cond.match(/^([><=])\s*(\d+)$/);
+      if (levelMatch) return false; // Si es condición de nivel, no aplica al nombre de cuenta
+      return acc.name.toLowerCase().includes(cond.toLowerCase());
+    });
+    
+    return hasMatchingChars || matchesAccountName;
   });
 
   const onDragEnd = async (result: DropResult) => {
@@ -259,71 +304,85 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-8 flex flex-col gap-6">
+    <div className="min-h-screen p-4 md:p-8">
+      <div className="max-w-7xl mx-auto flex flex-col gap-6">
       {/* Header Area */}
       <header className="flex flex-col gap-4">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="w-14 h-14 flex items-center justify-center bg-[#1c2b3a] rounded-full border-2 border-[#5a8bbd] shadow-[0_0_15px_rgba(90,139,189,0.3)] overflow-hidden">
-              <img src="/assets/cow_logo_final.png" alt="MuhRO Cow Logo" className="w-full h-full object-cover" />
+              <img src="/assets/cow_logo_final.png" alt="Ragnarok Online Logo" className="w-full h-full object-cover" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-[family-name:var(--font-pixel)] text-[#cedce7] tracking-tight">
-                MUH RO <span className="text-[#5a8bbd]">KAFRA CORP</span>
+              <h1 className="text-3xl md:text-4xl font-bold text-[#cedce7] tracking-tight">
+                Ragnarok Online <span className="text-[#5a8bbd]">Char Manager</span>
               </h1>
-              <p className="text-[#a0c0e0] text-xs uppercase tracking-widest opacity-70">Account Management System</p>
+              <p className="text-[#a0c0e0] text-sm uppercase tracking-widest opacity-70">Character Management System</p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <AccountDialog trigger={
-              <ROButton className="h-10 px-4 bg-[#2b4e6b] hover:bg-[#3a6a8e] text-white border-0 shadow-lg">
-                <span className="text-xs font-bold">+ NEW ACCOUNT</span>
-              </ROButton>
-            } />
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-0 bg-[#0a1018]/80 border border-[#2b4e6b]/50 rounded overflow-hidden shadow-2xl h-11">
-          <div className="flex-1 flex items-center relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5a8bbd]/40 pointer-events-none" />
-            <ROInput 
-              placeholder="SEARCH ACCOUNT, CHARACTER, CLASS, LEVEL (e.g. >250)..." 
-              className="h-full border-0 bg-transparent pl-11 pr-4 text-left placeholder:text-[#2b4e6b]/40 placeholder:uppercase placeholder:text-[10px] placeholder:tracking-widest"
-              value={searchQuery}
-              onChange={(e) => {
-                const val = e.target.value;
-                setSearchQuery(val);
-                
-                // Reset sub-filters if clearing
-                if (val === "") {
-                   setLevelFilter("");
-                   setClassFilter("");
-                   return;
-                }
+        {/* Search bar and Import/Export buttons */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-4 flex items-center gap-0 bg-[#0a1018]/80 border border-[#2b4e6b]/50 rounded overflow-hidden shadow-2xl h-11">
+            <div className="flex-1 flex items-center relative h-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5a8bbd]/40 pointer-events-none z-10" />
+              <ROInput 
+                placeholder="SEARCH ACCOUNT, CHARACTER, CLASS, LEVEL (e.g. >250)..." 
+                className="w-full h-full border-0 bg-[#0a1018]/80 pl-11 pr-4 text-left placeholder:text-[#2b4e6b]/40 placeholder:uppercase placeholder:text-[10px] placeholder:tracking-widest focus:outline-none focus:ring-0"
+                value={searchQuery}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSearchQuery(val);
+                  // El filtrado se hace automáticamente a través de filteredAccounts y filteredCharacters
+                  
+                  // Reset sub-filters if clearing
+                  if (val === "") {
+                     setLevelFilter("");
+                     setClassFilter("");
+                     return;
+                  }
 
-                // Heuristic parsing for level
-                const levelMatch = val.match(/([><])\s*(\d+)/);
-                if (levelMatch) {
-                   setLevelFilter(levelMatch[0].replace(/\s/g, ""));
-                } else {
-                   setLevelFilter("");
-                }
+                  // Heuristic parsing for level
+                  const levelMatch = val.match(/([><])\s*(\d+)/);
+                  if (levelMatch) {
+                     setLevelFilter(levelMatch[0].replace(/\s/g, ""));
+                  } else {
+                     setLevelFilter("");
+                  }
 
-                // Heuristic parsing for class
-                const words = val.split(" ");
-                const commonClasses = ["biolo", "cardinal", "inquisitor", "meister", "abyss", "chaser", "dragon", "knight", "imperial", "guard", "shadow", "cross", "arch", "bishop", "warlock", "sorcerer", "ranger", "minstrel", "wanderer", "shura", "genetic", "mechanic", "royal", "guard", "sura", "guillotine", "cross"];
-                const foundClass = words.find(w => commonClasses.includes(w.toLowerCase()));
-                if (foundClass) {
-                   setClassFilter(foundClass);
-                } else {
-                   setClassFilter("");
-                }
-              }}
-            />
+                  // Heuristic parsing for class
+                  const words = val.split(" ");
+                  const commonClasses = ["biolo", "cardinal", "inquisitor", "meister", "abyss", "chaser", "dragon", "knight", "imperial", "guard", "shadow", "cross", "arch", "bishop", "warlock", "sorcerer", "ranger", "minstrel", "wanderer", "shura", "genetic", "mechanic", "royal", "guard", "sura", "guillotine", "cross"];
+                  const foundClass = words.find(w => commonClasses.includes(w.toLowerCase()));
+                  if (foundClass) {
+                     setClassFilter(foundClass);
+                  } else {
+                     setClassFilter("");
+                  }
+                }}
+              />
+            </div>
           </div>
-
-          <div className="flex items-center">
+          
+          <div className="lg:col-span-8 flex items-center justify-end gap-2">
+            {/* Reset all ticks button */}
+            <ROButton
+              variant="icon"
+              size="sm"
+              onClick={() => {
+                setInstanceStatus({});
+                toast({
+                  title: "Ticks reseteados",
+                  description: "Todos los ticks de instancias han sido eliminados.",
+                });
+              }}
+              className="text-[#5a8bbd] hover:text-white hover:border-[#5a8bbd]"
+              title="Reset all ticks for all accounts"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </ROButton>
+            
             <input
               type="file"
               accept=".json"
@@ -333,14 +392,14 @@ export default function Dashboard() {
             />
             <label
               htmlFor="import-file-input"
-              className="flex items-center px-4 h-full bg-[#1c2b3a]/40 border-l border-[#2b4e6b]/30 hover:bg-[#5a8bbd]/10 transition-colors group cursor-pointer"
+              className="flex items-center justify-center px-6 w-32 h-11 bg-[#1c2b3a]/40 border border-[#2b4e6b]/30 rounded hover:bg-[#5a8bbd]/10 transition-colors group cursor-pointer"
             >
               <Upload className="w-4 h-4 text-[#5a8bbd]/60 group-hover:text-[#5a8bbd] mr-2" />
               <span className="text-[10px] font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">Import</span>
             </label>
             <button 
               onClick={handleExport}
-              className="flex items-center px-4 h-full bg-[#1c2b3a]/40 border-l border-[#2b4e6b]/30 hover:bg-[#5a8bbd]/10 transition-colors group"
+              className="flex items-center justify-center px-6 w-32 h-11 bg-[#1c2b3a]/40 border border-[#2b4e6b]/30 rounded hover:bg-[#5a8bbd]/10 transition-colors group"
             >
               <Download className="w-4 h-4 text-[#5a8bbd]/60 group-hover:text-[#5a8bbd] mr-2" />
               <span className="text-[10px] font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">Export</span>
@@ -375,7 +434,19 @@ export default function Dashboard() {
                     className="space-y-3 pr-2"
                   >
                     {filteredAccounts.map((account, index) => {
-                      const accountCharacters = allCharactersData?.filter(c => c.accountId === account.id) || [];
+                      const allAccountCharacters = allCharactersData?.filter(c => c.accountId === account.id) || [];
+                      
+                      // Filtrar personajes por la búsqueda actual con soporte para múltiples condiciones
+                      const accountCharacters = allAccountCharacters.filter(char => {
+                        const searchLower = searchQuery.trim();
+                        if (searchLower === "") return true;
+                        
+                        // Dividir por + para obtener múltiples condiciones
+                        const conditions = searchLower.split('+').map(c => c.trim()).filter(c => c !== '');
+                        
+                        // Todas las condiciones deben cumplirse (AND)
+                        return matchesAllConditions(char, conditions);
+                      });
                       
                       return (
                         <Draggable key={account.id} draggableId={account.id.toString()} index={index}>
@@ -446,17 +517,15 @@ export default function Dashboard() {
                               </div>
 
                               {/* Quick Glance Characters - Displayed below name/ID */}
-                              <div className="mt-1 flex flex-wrap gap-2 pl-7 min-h-[24px]">
+                              <div className="mt-1 flex flex-col gap-2 pl-7 min-h-[24px]">
                                 {accountCharacters && accountCharacters.length > 0 ? (
                                   accountCharacters.map(char => (
                                     <div key={char.id} className="flex items-center gap-1.5 bg-[#0a1018]/60 px-2 py-1 rounded border border-[#5a8bbd]/20 hover:border-[#5a8bbd]/40 transition-colors shadow-sm">
-                                      <div className="w-5 h-5 flex items-center justify-center">
+                                      <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
                                         <ClassSprite className={char.class} alt={char.name} isIconOnly />
                                       </div>
-                                      <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-white leading-none">{char.name}</span>
-                                        <span className="text-[9px] font-mono text-[#5a8bbd] leading-none">Lv. {char.lvl}</span>
-                                      </div>
+                                      <span className="text-[10px] font-bold text-white leading-none">{char.name}</span>
+                                      <span className="text-[9px] font-mono text-[#5a8bbd] leading-none">Lv. {char.lvl}</span>
                                     </div>
                                   ))
                                 ) : (
@@ -483,7 +552,66 @@ export default function Dashboard() {
         <ROPanel 
           title={selectedAccountId ? `Characters [${accounts?.find(a => a.id === selectedAccountId)?.name}]` : "Select an Account"} 
           className="lg:col-span-8 min-h-[500px]"
-          headerAction={selectedAccountId ? <CharacterDialog accountId={selectedAccountId} /> : null}
+          headerAction={selectedAccountId ? (
+            <div className="flex items-center gap-2">
+              {/* Instance mode toggle button */}
+              <ROButton
+                variant="icon"
+                size="sm"
+                onClick={() => setInstanceMode(!instanceMode)}
+                className={instanceMode ? "bg-[#2b4e6b] text-white" : "text-[#5a8bbd] hover:text-white"}
+                title="Instance Mode"
+              >
+                <Skull className="w-4 h-4" />
+              </ROButton>
+              
+              {/* Reset ticks for current account only */}
+              {instanceMode && (
+                <ROButton
+                  variant="icon"
+                  size="sm"
+                  onClick={() => {
+                    if (characters) {
+                      const updatedStatus = { ...instanceStatus };
+                      characters.forEach(char => {
+                        if (updatedStatus[char.id]) {
+                          updatedStatus[char.id] = {};
+                        }
+                      });
+                      setInstanceStatus(updatedStatus);
+                    }
+                  }}
+                  className="text-[#5a8bbd] hover:text-white hover:border-[#5a8bbd]"
+                  title="Reset ticks for this account only"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </ROButton>
+              )}
+              
+              {/* Vista toggle buttons */}
+              {!instanceMode && (
+                <div className="flex items-center gap-1 bg-[#0a1018] border border-[#2b4e6b] rounded p-1">
+                  <ROButton
+                    variant="icon"
+                    size="sm"
+                    onClick={() => setViewMode("grid")}
+                    className={viewMode === "grid" ? "bg-[#2b4e6b] text-white" : "text-[#5a8bbd] hover:text-white"}
+                  >
+                    <Grid3x3 className="w-4 h-4" />
+                  </ROButton>
+                  <ROButton
+                    variant="icon"
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    className={viewMode === "list" ? "bg-[#2b4e6b] text-white" : "text-[#5a8bbd] hover:text-white"}
+                  >
+                    <List className="w-4 h-4" />
+                  </ROButton>
+                </div>
+              )}
+              <CharacterDialog accountId={selectedAccountId} />
+            </div>
+          ) : null}
         >
           {!selectedAccountId ? (
             <div className="h-full flex flex-col items-center justify-center text-[#5a8bbd]/40 gap-4">
@@ -499,10 +627,79 @@ export default function Dashboard() {
               <p>No characters created yet.</p>
               <CharacterDialog accountId={selectedAccountId} />
             </div>
-          ) : (
+          ) : filteredCharacters.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-[#5a8bbd]/50 gap-4">
+              <p>No characters match your search.</p>
+              {searchQuery && (
+                <p className="text-xs text-[#5a8bbd]/30">Try a different search term or clear the search.</p>
+              )}
+            </div>
+          ) : instanceMode ? (
+            <div className="w-full overflow-auto">
+              <div className="inline-block min-w-full">
+                {/* Header con nombres de instancias */}
+                <div className="flex border-b-2 border-[#2b4e6b] mb-2">
+                  <div className="w-48 flex-shrink-0 p-2 border-r-2 border-[#2b4e6b] font-bold text-sm text-[#cedce7]">
+                    Character
+                  </div>
+                  {instances.map((instance) => (
+                    <div
+                      key={instance}
+                      className="flex-1 min-w-[120px] p-2 text-center font-bold text-sm text-[#cedce7] border-r-2 last:border-r-0 border-[#2b4e6b]"
+                    >
+                      {instance}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Filas de personajes con checkboxes */}
+                <div className="flex flex-col">
+                  {filteredCharacters.map((char) => (
+                    <div key={char.id} className="flex border-b border-[#2b4e6b]/50 hover:bg-[#0a1018]/50 transition-colors">
+                      {/* Columna de personaje */}
+                      <div className="w-48 flex-shrink-0 p-3 border-r-2 border-[#2b4e6b] flex items-center gap-2">
+                        <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                          <ClassSprite className={char.class} alt={char.name} isIconOnly />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-bold text-white leading-none">{char.name}</div>
+                          <div className="text-xs text-[#5a8bbd] leading-none mt-2">
+                            {char.class} Lv.{char.lvl}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Checkboxes de instancias */}
+                      {instances.map((instance) => (
+                        <div
+                          key={instance}
+                          className="flex-1 min-w-[120px] p-3 flex items-center justify-center border-r-2 last:border-r-0 border-[#2b4e6b]"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={instanceStatus[char.id]?.[instance] || false}
+                            onChange={(e) => {
+                              setInstanceStatus((prev) => ({
+                                ...prev,
+                                [char.id]: {
+                                  ...(prev[char.id] || {}),
+                                  [instance]: e.target.checked,
+                                },
+                              }));
+                            }}
+                            className="w-5 h-5 cursor-pointer accent-[#5a8bbd] rounded border-[#2b4e6b] bg-[#0a1018] checked:bg-[#5a8bbd]"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : viewMode === "grid" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               <AnimatePresence>
-                {characters.map((char) => (
+                {filteredCharacters.map((char) => (
                   <motion.div
                     key={char.id}
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -510,12 +707,12 @@ export default function Dashboard() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <div className="group relative bg-[#0a1018] border border-[#2b4e6b] rounded hover:border-[#5a8bbd] transition-colors overflow-hidden">
+                    <div className="group relative bg-[#0a1018] border border-[#2b4e6b] rounded transition-colors overflow-hidden">
                       {/* Character Card Header */}
                       <div className="flex justify-between items-start p-3 bg-gradient-to-b from-[#1c2b3a] to-[#121c26] border-b border-[#2b4e6b]">
                         <div>
                           <h4 className="font-bold text-white text-sm">{char.name}</h4>
-                          <span className="text-xs text-[#5a8bbd] block">{char.class}</span>
+                          <span className="text-xs text-[#5a8bbd] block mt-2">{char.class}</span>
                         </div>
                         <div className="bg-[#0a1018] px-2 py-1 rounded border border-[#2b4e6b] text-xs font-mono text-[#cedce7]">
                           Lv. {char.lvl}
@@ -523,25 +720,91 @@ export default function Dashboard() {
                       </div>
 
                       {/* Character Sprite Area */}
-                      <div className="relative h-40 p-4 flex items-center justify-center bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0a1018]/80" />
+                      <div className="relative h-40 p-4 flex items-center justify-center bg-[#0a1018] pointer-events-none">
                         <ClassSprite className={char.class} alt={char.name} />
                       </div>
 
                       {/* Actions Overlay */}
-                      <div className="absolute inset-x-0 bottom-0 p-2 bg-[#0a1018]/90 backdrop-blur border-t border-[#2b4e6b] translate-y-full group-hover:translate-y-0 transition-transform flex justify-end gap-2">
+                      <div className="absolute inset-x-0 bottom-0 p-2 bg-[#0a1018]/90 backdrop-blur border-t border-[#2b4e6b] opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex justify-end gap-2 z-50 pointer-events-none group-hover:pointer-events-auto">
                         <CharacterDialog 
                           accountId={selectedAccountId} 
                           character={char} 
                           trigger={
-                            <ROButton variant="icon" size="sm">
+                            <ROButton variant="icon" size="sm" type="button" className="cursor-pointer pointer-events-auto">
                               <Edit className="w-3 h-3" />
                             </ROButton>
                           }
                         />
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <ROButton variant="icon" size="sm" className="hover:border-red-500 hover:text-red-400">
+                            <ROButton variant="icon" size="sm" type="button" className="hover:border-red-500 hover:text-red-400 cursor-pointer pointer-events-auto">
+                              <Trash2 className="w-3 h-3" />
+                            </ROButton>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-white">Delete Character?</AlertDialogTitle>
+                              <AlertDialogDescription className="text-[#a0c0e0]">
+                                Are you sure you want to delete <strong>{char.name}</strong>? (Lv. {char.lvl} {char.class})
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="bg-transparent border-[#2b4e6b] text-[#a0c0e0] hover:bg-white/5 hover:text-white">Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => deleteCharacterMutation.mutate({ id: char.id, accountId: selectedAccountId })}
+                                className="bg-red-900/50 border border-red-500 text-red-200 hover:bg-red-800"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <AnimatePresence>
+                {filteredCharacters.map((char) => (
+                  <motion.div
+                    key={char.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="group flex items-center gap-3 bg-[#0a1018]/60 px-3 py-2 rounded border border-[#5a8bbd]/20 hover:border-[#5a8bbd]/40 transition-colors shadow-sm">
+                      {/* Icon */}
+                      <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+                        <ClassSprite className={char.class} alt={char.name} isIconOnly />
+                      </div>
+                      
+                      {/* Name and Class */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-white leading-none">{char.name}</span>
+                          <span className="text-xs font-mono text-[#5a8bbd] leading-none">Lv. {char.lvl}</span>
+                        </div>
+                        <span className="text-xs text-[#5a8bbd] block leading-none mt-2">{char.class}</span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <CharacterDialog 
+                          accountId={selectedAccountId} 
+                          character={char} 
+                          trigger={
+                            <ROButton variant="icon" size="sm" type="button">
+                              <Edit className="w-3 h-3" />
+                            </ROButton>
+                          }
+                        />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <ROButton variant="icon" size="sm" type="button" className="hover:border-red-500 hover:text-red-400">
                               <Trash2 className="w-3 h-3" />
                             </ROButton>
                           </AlertDialogTrigger>
@@ -572,6 +835,7 @@ export default function Dashboard() {
           )}
         </ROPanel>
       </div>
+    </div>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCreateCharacter, useUpdateCharacter } from "@/hooks/use-characters";
 import { ROButton, ROInput } from "./ROPanel";
-import { CLASS_OPTIONS } from "./ClassSprite";
+import { CLASS_OPTIONS, ClassSprite } from "./ClassSprite";
 import { useState } from "react";
 import { Plus, Edit } from "lucide-react";
 
@@ -92,7 +92,12 @@ export function CharacterDialog({ accountId, character, trigger }: CharacterDial
                       <SelectContent className="bg-[#0a1018] border-[#2b4e6b] text-[#a0c0e0] max-h-[300px]">
                         {CLASS_OPTIONS.map((job) => (
                           <SelectItem key={job} value={job} className="focus:bg-[#1c2b3a] focus:text-white">
-                            {job}
+                            <div className="flex items-center gap-2.5 w-full">
+                              <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                                <ClassSprite className={job} alt={job} isIconOnly />
+                              </div>
+                              <span>{job}</span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
