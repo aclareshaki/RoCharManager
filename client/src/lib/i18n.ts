@@ -66,6 +66,10 @@ export const translations = {
     deleteAllMessage: "Esta acción eliminará permanentemente todas las cuentas y personajes guardados.",
     deleteAllWarning: "Esta acción no se puede deshacer.",
     deleteAllConfirm: "Borrar Todo",
+    deleteAllAccountsTitle: "¿Eliminar todas las cuentas?",
+    deleteAllAccountsMessage: "Esta acción eliminará permanentemente",
+    deleteAllAccountsMessage2: "y todos los personajes asociados.",
+    deleteAllAccountsConfirm: "Eliminar Todo",
     
     // Dialog forms
     editAccount: "Editar Cuenta",
@@ -179,6 +183,10 @@ export const translations = {
     deleteAllMessage: "This action will permanently delete all saved accounts and characters.",
     deleteAllWarning: "This action cannot be undone.",
     deleteAllConfirm: "Clear All",
+    deleteAllAccountsTitle: "Delete all accounts?",
+    deleteAllAccountsMessage: "This action will permanently delete",
+    deleteAllAccountsMessage2: "and all associated characters.",
+    deleteAllAccountsConfirm: "Delete All",
     
     // Dialog forms
     editAccount: "Edit Account",

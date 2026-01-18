@@ -613,42 +613,46 @@ export default function Dashboard() {
               {accounts && accounts.length > 0 && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <ROButton
-                      variant="icon"
-                      size="md"
-                      className="w-10 h-10 lg:w-12 lg:h-12 hover:border-red-500 hover:text-red-400"
-                      title="Eliminar todas las cuentas"
+                  <ROButton
+                    variant="icon"
+                    size="md"
+                    className="w-10 h-10 lg:w-12 lg:h-12 hover:border-red-500 hover:text-red-400"
+                    title={t("deleteAllAccountsTitle")}
+                  >
+                    <Trash className="w-5 h-5 lg:w-6 lg:h-6" />
+                  </ROButton>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-white text-lg lg:text-xl">
+                      {t("deleteAllAccountsTitle")}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-[#a0c0e0] text-base lg:text-lg">
+                      {t("deleteAllAccountsMessage")} <strong>
+                        {getLanguage() === "es" 
+                          ? `todas las ${accounts.length} cuentas`
+                          : `all ${accounts.length} accounts`}
+                      </strong> {t("deleteAllAccountsMessage2")}
+                      <br />
+                      <br />
+                      <strong className="text-red-400">{t("deleteAllWarning")}</strong>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="gap-3">
+                    <AlertDialogCancel className="bg-transparent border-[#2b4e6b] text-[#a0c0e0] hover:bg-white/5 hover:text-white px-6 py-2 text-base">
+                      {t("cancel")}
+                    </AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => {
+                        deleteAllAccountsMutation.mutate();
+                        setSelectedAccountId(null);
+                      }}
+                      className="bg-red-900/50 border border-red-500 text-red-200 hover:bg-red-800 px-6 py-2 text-base"
                     >
-                      <Trash className="w-5 h-5 lg:w-6 lg:h-6" />
-                    </ROButton>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="text-white text-lg lg:text-xl">
-                        ¿Eliminar todas las cuentas?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription className="text-[#a0c0e0] text-base lg:text-lg">
-                        Esta acción eliminará permanentemente <strong>todas las {accounts.length} cuentas</strong> y todos los personajes asociados.
-                        <br />
-                        <br />
-                        <strong className="text-red-400">Esta acción no se puede deshacer.</strong>
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="gap-3">
-                      <AlertDialogCancel className="bg-transparent border-[#2b4e6b] text-[#a0c0e0] hover:bg-white/5 hover:text-white px-6 py-2 text-base">
-                        Cancelar
-                      </AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={() => {
-                          deleteAllAccountsMutation.mutate();
-                          setSelectedAccountId(null);
-                        }}
-                        className="bg-red-900/50 border border-red-500 text-red-200 hover:bg-red-800 px-6 py-2 text-base"
-                      >
-                        Eliminar Todo
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
+                      {t("deleteAllAccountsConfirm")}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
                 </AlertDialog>
               )}
               <AccountDialog />
