@@ -9,6 +9,7 @@ import { ROButton, ROInput } from "./ROPanel";
 import { CLASS_OPTIONS, ClassSprite } from "./ClassSprite";
 import { useState } from "react";
 import { Plus, Edit } from "lucide-react";
+import { t, getLanguage } from "@/lib/i18n";
 
 interface CharacterDialogProps {
   accountId: number;
@@ -50,14 +51,14 @@ export function CharacterDialog({ accountId, character, trigger }: CharacterDial
       <DialogTrigger asChild>
         {trigger || (
           <ROButton variant={isEditing ? "icon" : "primary"} size="md" className={!isEditing ? "min-w-[140px] flex items-center justify-center" : ""}>
-            {isEditing ? <Edit className="w-4 h-4" /> : <><Plus className="w-4 h-4 mr-2" /> Add Character</>}
+            {isEditing ? <Edit className="w-4 h-4" /> : <><Plus className="w-4 h-4 mr-2" /> {t("addCharacter")}</>}
           </ROButton>
         )}
       </DialogTrigger>
       <DialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
         <DialogHeader>
           <DialogTitle className="text-[#cedce7] font-bold">
-            {isEditing ? "Edit Character" : "Create New Character"}
+            {isEditing ? t("editCharacter") : t("createCharacter")}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
@@ -67,9 +68,9 @@ export function CharacterDialog({ accountId, character, trigger }: CharacterDial
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[#5a8bbd]">Character Name</FormLabel>
+                  <FormLabel className="text-[#5a8bbd]">{t("characterName")}</FormLabel>
                   <FormControl>
-                    <ROInput placeholder="Enter character name..." {...field} />
+                    <ROInput placeholder={t("enterCharacterName")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -82,11 +83,11 @@ export function CharacterDialog({ accountId, character, trigger }: CharacterDial
                 name="class"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[#5a8bbd]">Class</FormLabel>
+                    <FormLabel className="text-[#5a8bbd]">{getLanguage() === "es" ? "Clase" : "Class"}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger className="bg-[#0a1018] border-[#2b4e6b] text-[#a0c0e0]">
-                          <SelectValue placeholder="Select class" />
+                          <SelectValue placeholder={t("selectClass")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-[#0a1018] border-[#2b4e6b] text-[#a0c0e0] max-h-[300px]">
@@ -112,7 +113,7 @@ export function CharacterDialog({ accountId, character, trigger }: CharacterDial
                 name="lvl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[#5a8bbd]">Base Level</FormLabel>
+                    <FormLabel className="text-[#5a8bbd]">{t("baseLevel")}</FormLabel>
                     <FormControl>
                       <ROInput 
                         type="number" 
@@ -130,7 +131,7 @@ export function CharacterDialog({ accountId, character, trigger }: CharacterDial
 
             <div className="flex justify-end pt-4">
               <ROButton type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Character"}
+                {createMutation.isPending || updateMutation.isPending ? t("saving") : t("saveCharacter")}
               </ROButton>
             </div>
           </form>

@@ -2,6 +2,7 @@ import { Upload, FileJson, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as localStorage from "@/lib/localStorage";
 import { useState } from "react";
+import { t, getLanguage } from "@/lib/i18n";
 
 interface WelcomeScreenProps {
   onImport: () => void;
@@ -68,9 +69,9 @@ export function WelcomeScreen({ onImport }: WelcomeScreenProps) {
       }));
     }
 
-    if (accountsToImport.length === 0 && charactersToImport.length === 0) {
-      throw new Error("No se encontraron datos válidos en el archivo JSON");
-    }
+        if (accountsToImport.length === 0 && charactersToImport.length === 0) {
+          throw new Error(t("noValidData"));
+        }
 
     // Import data
     localStorage.importData({
@@ -79,8 +80,10 @@ export function WelcomeScreen({ onImport }: WelcomeScreenProps) {
     });
 
     toast({
-      title: "Importación exitosa",
-      description: `Se importaron ${accountsToImport.length} cuentas y ${charactersToImport.length} personajes`,
+      title: t("importSuccess"),
+      description: getLanguage() === "es"
+        ? `Se importaron ${accountsToImport.length} cuentas y ${charactersToImport.length} personajes`
+        : `Imported ${accountsToImport.length} accounts and ${charactersToImport.length} characters`,
     });
 
     // Trigger refresh
@@ -99,8 +102,8 @@ export function WelcomeScreen({ onImport }: WelcomeScreenProps) {
     } catch (error) {
       console.error("Error loading example:", error);
       toast({
-        title: "Error al cargar ejemplo",
-        description: error instanceof Error ? error.message : "Error al cargar los datos de ejemplo",
+        title: t("errorLoadDemo"),
+        description: error instanceof Error ? error.message : t("errorLoadDemo"),
         variant: "destructive",
       });
     } finally {
@@ -121,8 +124,8 @@ export function WelcomeScreen({ onImport }: WelcomeScreenProps) {
       } catch (error) {
         console.error("File read error:", error);
         toast({
-          title: "Error al importar",
-          description: error instanceof Error ? error.message : "Error al leer el archivo JSON",
+          title: t("errorImport"),
+          description: error instanceof Error ? error.message : t("errorReadFile"),
           variant: "destructive",
         });
       }

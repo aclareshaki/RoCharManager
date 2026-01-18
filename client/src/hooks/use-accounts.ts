@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { type InsertAccount } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import * as localStorage from "@/lib/localStorage";
+import { t } from "@/lib/i18n";
 
 export function useAccounts() {
   return useQuery({
@@ -20,7 +21,7 @@ export function useCreateAccount() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
-      toast({ title: "Success", description: "Account created successfully" });
+      toast({ title: t("accountCreated"), description: t("accountCreated") });
     },
     onError: (error: Error) => {
       toast({ variant: "destructive", title: "Error", description: error.message });
@@ -39,7 +40,7 @@ export function useUpdateAccount() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       queryClient.invalidateQueries({ queryKey: ["characters"] });
-      toast({ title: "Success", description: "Account updated successfully" });
+      toast({ title: t("accountUpdated"), description: t("accountUpdated") });
     },
     onError: (error: Error) => {
       toast({ variant: "destructive", title: "Error", description: error.message });
@@ -59,7 +60,7 @@ export function useDeleteAccount() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       queryClient.invalidateQueries({ queryKey: ["characters"] });
-      toast({ title: "Success", description: "Account deleted successfully" });
+      toast({ title: t("accountDeleted"), description: t("accountDeleted") });
     },
     onError: (error: Error) => {
       toast({ variant: "destructive", title: "Error", description: error.message });
@@ -80,8 +81,8 @@ export function useDeleteAllAccounts() {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       queryClient.invalidateQueries({ queryKey: ["characters"] });
       toast({ 
-        title: "Todas las cuentas eliminadas", 
-        description: "Se han eliminado todas las cuentas y personajes",
+        title: t("allDataCleared"), 
+        description: t("allDataClearedDesc"),
         variant: "destructive"
       });
     },

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { InsertCharacter } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import * as localStorage from "@/lib/localStorage";
+import { t } from "@/lib/i18n";
 
 export function useCharacters(accountId?: number) {
   return useQuery({
@@ -25,7 +26,7 @@ export function useCreateCharacter() {
       queryClient.invalidateQueries({ 
         queryKey: ["characters"] 
       });
-      toast({ title: "Success", description: "Character created successfully" });
+      toast({ title: t("characterCreated"), description: t("characterCreated") });
     },
     onError: (error: Error) => {
       toast({ variant: "destructive", title: "Error", description: error.message });
@@ -52,7 +53,7 @@ export function useUpdateCharacter() {
       queryClient.invalidateQueries({ 
         queryKey: ["characters"] 
       });
-      toast({ title: "Success", description: "Character updated successfully" });
+      toast({ title: t("characterUpdated"), description: t("characterUpdated") });
     },
     onError: (error: Error) => {
       toast({ variant: "destructive", title: "Error", description: error.message });
@@ -77,7 +78,7 @@ export function useDeleteCharacter() {
       queryClient.invalidateQueries({ 
         queryKey: ["characters"] 
       });
-      toast({ title: "Success", description: "Character deleted successfully" });
+      toast({ title: t("characterDeleted"), description: t("characterDeleted") });
     },
     onError: (error: Error) => {
       toast({ variant: "destructive", title: "Error", description: error.message });

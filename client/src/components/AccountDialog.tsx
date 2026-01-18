@@ -7,6 +7,7 @@ import { useCreateAccount, useUpdateAccount } from "@/hooks/use-accounts";
 import { ROButton, ROInput } from "./ROPanel";
 import { useState } from "react";
 import { Plus, Edit } from "lucide-react";
+import { t } from "@/lib/i18n";
 
 interface AccountDialogProps {
   account?: Account;
@@ -41,14 +42,14 @@ export function AccountDialog({ account, trigger }: AccountDialogProps) {
       <DialogTrigger asChild>
         {trigger || (
           <ROButton variant={isEditing ? "icon" : "primary"} size={isEditing ? "sm" : "md"} className={!isEditing ? "min-w-[140px] flex items-center justify-center" : ""}>
-            {isEditing ? <Edit className="w-4 h-4" /> : <><Plus className="w-4 h-4 mr-2" /> New Account</>}
+            {isEditing ? <Edit className="w-4 h-4" /> : <><Plus className="w-4 h-4 mr-2" /> {t("newAccount")}</>}
           </ROButton>
         )}
       </DialogTrigger>
       <DialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
         <DialogHeader>
           <DialogTitle className="text-[#cedce7] font-bold">
-            {isEditing ? "Edit Account" : "Create New Account"}
+            {isEditing ? t("editAccount") : t("createAccount")}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
@@ -58,9 +59,9 @@ export function AccountDialog({ account, trigger }: AccountDialogProps) {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[#5a8bbd]">Account Name</FormLabel>
+                  <FormLabel className="text-[#5a8bbd]">{t("accountName")}</FormLabel>
                   <FormControl>
-                    <ROInput placeholder="Enter account name..." {...field} />
+                    <ROInput placeholder={t("enterAccountName")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -68,7 +69,7 @@ export function AccountDialog({ account, trigger }: AccountDialogProps) {
             />
             <div className="flex justify-end pt-4">
               <ROButton type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Account"}
+                {createMutation.isPending || updateMutation.isPending ? t("saving") : t("saveAccount")}
               </ROButton>
             </div>
           </form>

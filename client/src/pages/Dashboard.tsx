@@ -13,6 +13,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { useQueryClient } from "@tanstack/react-query";
 import * as localStorage from "@/lib/localStorage";
+import { t, getLanguage } from "@/lib/i18n";
+import { useState, useEffect } from "react";
 
 export default function Dashboard() {
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
@@ -22,15 +24,15 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [instanceMode, setInstanceMode] = useState(false);
   
-  // Instancias disponibles con sus nombres completos
+  // Instancias disponibles con sus nombres completos (siempre en inglés)
   const instances = ["NGH", "HGH", "COGH", "LOF", "HOL", "CT"];
   const instanceNames: Record<string, string> = {
-    "NGH": "Glast heim normal",
-    "HGH": "Glast heim hard",
-    "COGH": "Glast Heim challenge",
-    "LOF": "Lake of fire",
-    "HOL": "Hall of life",
-    "CT": "Constellation tower"
+    "NGH": t("instanceNGH"),
+    "HGH": t("instanceHGH"),
+    "COGH": t("instanceCOGH"),
+    "LOF": t("instanceLOF"),
+    "HOL": t("instanceHOL"),
+    "CT": t("instanceCT")
   };
   
   // Estado de instancias por personaje (characterId -> instanceName -> checked)
@@ -41,11 +43,13 @@ export default function Dashboard() {
   const { data: allCharactersData } = useCharacters();
   const [localAccounts, setLocalAccounts] = useState<any[]>([]);
   const [hasData, setHasData] = useState(false);
+  const [currentLang, setCurrentLang] = useState<"es" | "en">(getLanguage());
   const deleteAllAccountsMutation = useDeleteAllAccounts();
   const deleteAccountMutation = useDeleteAccount();
 
   useEffect(() => {
     setHasData(localStorage.hasData());
+    setCurrentLang(getLanguage());
   }, [accounts, allCharactersData]);
 
   useEffect(() => {
@@ -174,10 +178,12 @@ export default function Dashboard() {
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
     
-    toast({
-      title: "Exportación exitosa",
-      description: `Se exportaron ${data.accounts.length} cuentas y ${data.characters.length} personajes`,
-    });
+        toast({
+          title: t("exportSuccess"),
+          description: getLanguage() === "es"
+            ? `Se exportaron ${data.accounts.length} cuentas y ${data.characters.length} personajes`
+            : `Exported ${data.accounts.length} accounts and ${data.characters.length} characters`,
+        });
   };
 
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,8 +254,8 @@ export default function Dashboard() {
 
         if (accountsToImport.length === 0 && charactersToImport.length === 0) {
           toast({
-            title: "Error",
-            description: "No se encontraron datos válidos en el archivo JSON",
+            title: t("error"),
+            description: t("noValidData"),
             variant: "destructive",
           });
           return;
@@ -262,8 +268,10 @@ export default function Dashboard() {
         });
 
         toast({
-          title: "Importación exitosa",
-          description: `Se importaron ${accountsToImport.length} cuentas y ${charactersToImport.length} personajes`,
+          title: t("importSuccess"),
+          description: getLanguage() === "es"
+            ? `Se importaron ${accountsToImport.length} cuentas y ${charactersToImport.length} personajes`
+            : `Imported ${accountsToImport.length} accounts and ${charactersToImport.length} characters`,
         });
 
         // Refresh data
@@ -276,8 +284,8 @@ export default function Dashboard() {
       } catch (error) {
         console.error("File read error:", error);
         toast({
-          title: "Error al importar",
-          description: error instanceof Error ? error.message : "Error al leer el archivo JSON",
+          title: t("errorImport"),
+          description: error instanceof Error ? error.message : t("errorReadFile"),
           variant: "destructive",
         });
       }
@@ -328,16 +336,18 @@ export default function Dashboard() {
       });
 
       toast({
-        title: "Demo cargada",
-        description: `Se cargaron ${accountsToImport.length} cuentas y ${charactersToImport.length} personajes de ejemplo`,
+        title: t("demoLoaded"),
+        description: getLanguage() === "es" 
+          ? `Se cargaron ${accountsToImport.length} cuentas y ${charactersToImport.length} personajes de ejemplo`
+          : `Loaded ${accountsToImport.length} accounts and ${charactersToImport.length} example characters`,
       });
 
       handleRefresh();
     } catch (error) {
       console.error("Error loading demo:", error);
       toast({
-        title: "Error al cargar demo",
-        description: error instanceof Error ? error.message : "Error al cargar los datos de ejemplo",
+        title: t("errorLoadDemo"),
+        description: error instanceof Error ? error.message : t("errorLoadDemo"),
         variant: "destructive",
       });
     }
@@ -347,10 +357,10 @@ export default function Dashboard() {
     localStorage.clearAllData();
     setSelectedAccountId(null);
     handleRefresh();
-    toast({
-      title: "Datos eliminados",
-      description: "Todos los datos han sido eliminados",
-    });
+      toast({
+        title: t("allDataCleared"),
+        description: t("allDataClearedDesc"),
+      });
   };
 
   return (
@@ -365,9 +375,9 @@ export default function Dashboard() {
             </div>
             <div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#cedce7] tracking-tight">
-                Ragnarok Online <span className="text-[#5a8bbd]">Char Manager</span>
+                {t("title")}
               </h1>
-              <p className="text-[#a0c0e0] text-base md:text-lg uppercase tracking-widest opacity-70 mt-1">Character Management System</p>
+              <p className="text-[#a0c0e0] text-base md:text-lg uppercase tracking-widest opacity-70 mt-1">{t("subtitle")}</p>
             </div>
           </div>
         </div>
@@ -378,7 +388,7 @@ export default function Dashboard() {
             <div className="flex-1 flex items-center relative h-full">
               <Search className="absolute left-5 lg:left-6 top-1/2 -translate-y-1/2 w-5 h-5 lg:w-6 lg:h-6 text-[#5a8bbd]/40 pointer-events-none z-10" />
               <ROInput 
-                placeholder="SEARCH ACCOUNT, CHARACTER, CLASS, LEVEL (e.g. >250)..." 
+                placeholder={t("searchPlaceholder")}
                 className="w-full h-full border-0 bg-[#0a1018]/80 pl-14 lg:pl-16 pr-5 lg:pr-6 text-base lg:text-lg text-left placeholder:text-[#2b4e6b]/40 placeholder:uppercase placeholder:text-xs lg:text-sm placeholder:tracking-widest focus:outline-none focus:ring-0"
                 value={searchQuery}
                 onChange={(e) => {
@@ -423,13 +433,13 @@ export default function Dashboard() {
                 size="md"
                 onClick={() => {
                   setInstanceStatus({});
-                  toast({
-                    title: "Ticks reseteados",
-                    description: "Todos los ticks de instancias han sido eliminados.",
-                  });
+                toast({
+                  title: t("ticksReset"),
+                  description: t("ticksResetDesc"),
+                });
                 }}
                 className="text-[#5a8bbd] hover:text-white hover:border-[#5a8bbd] w-12 h-12 lg:w-14 lg:h-14"
-                title="Reset all ticks for all accounts"
+                title={t("resetAllTicks")}
               >
                 <RotateCcw className="w-5 h-5 lg:w-6 lg:h-6" />
               </ROButton>
@@ -441,7 +451,7 @@ export default function Dashboard() {
                 onClick={handleLoadDemo}
                 className="flex items-center justify-center px-6 lg:px-8 h-14 lg:h-16 bg-[#5a8bbd]/20 border-2 border-[#5a8bbd]/50 rounded-lg hover:bg-[#5a8bbd]/30 hover:border-[#5a8bbd] transition-all text-sm lg:text-base font-semibold text-[#cedce7]"
               >
-                Ver Demo con mis personajes
+                {t("demo")}
               </button>
             )}
             
@@ -461,24 +471,24 @@ export default function Dashboard() {
                 <AlertDialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
                   <AlertDialogHeader>
                     <AlertDialogTitle className="text-white text-lg lg:text-xl">
-                      ¿Borrar todos los datos?
+                      {t("deleteAllTitle")}
                     </AlertDialogTitle>
                     <AlertDialogDescription className="text-[#a0c0e0] text-base lg:text-lg">
-                      Esta acción eliminará permanentemente todas las cuentas y personajes guardados.
+                      {t("deleteAllMessage")}
                       <br />
                       <br />
-                      <strong className="text-red-400">Esta acción no se puede deshacer.</strong>
+                      <strong className="text-red-400">{t("deleteAllWarning")}</strong>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="gap-3">
                     <AlertDialogCancel className="bg-transparent border-[#2b4e6b] text-[#a0c0e0] hover:bg-white/5 hover:text-white px-6 py-2 text-base">
-                      Cancelar
+                      {t("cancel")}
                     </AlertDialogCancel>
                     <AlertDialogAction 
                       onClick={handleClearAll}
                       className="bg-red-900/50 border border-red-500 text-red-200 hover:bg-red-800 px-6 py-2 text-base"
                     >
-                      Borrar Todo
+                      {t("deleteAllConfirm")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -497,7 +507,7 @@ export default function Dashboard() {
               className="flex items-center justify-center px-8 lg:px-10 w-auto min-w-[140px] lg:min-w-[160px] h-14 lg:h-16 bg-[#1c2b3a]/40 border border-[#2b4e6b]/30 rounded-lg hover:bg-[#1c2b3a]/60 hover:border-[#5a8bbd]/50 transition-colors group cursor-pointer"
             >
               <Upload className="w-5 h-5 lg:w-6 lg:h-6 text-[#5a8bbd]/60 group-hover:text-[#5a8bbd] mr-3" />
-              <span className="text-sm lg:text-base font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">Import</span>
+              <span className="text-sm lg:text-base font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">{t("import")}</span>
             </label>
             {hasData && (
               <button 
@@ -505,7 +515,7 @@ export default function Dashboard() {
                 className="flex items-center justify-center px-8 lg:px-10 w-auto min-w-[140px] lg:min-w-[160px] h-14 lg:h-16 bg-[#1c2b3a]/40 border border-[#2b4e6b]/30 rounded-lg hover:bg-[#5a8bbd]/10 transition-colors group"
               >
                 <Download className="w-5 h-5 lg:w-6 lg:h-6 text-[#5a8bbd]/60 group-hover:text-[#5a8bbd] mr-3" />
-                <span className="text-sm lg:text-base font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">Export</span>
+                <span className="text-sm lg:text-base font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">{t("export")}</span>
               </button>
             )}
           </div>
@@ -517,7 +527,7 @@ export default function Dashboard() {
         
         {/* Left Panel: Accounts List */}
         <ROPanel 
-          title="Accounts" 
+          title={t("accounts")}
           className="lg:col-span-4 h-[70vh] lg:h-[75vh]"
           headerAction={
             <div className="flex items-center gap-2 lg:gap-3">
@@ -567,38 +577,38 @@ export default function Dashboard() {
           }
         >
           {isLoadingAccounts ? (
-            <div className="flex justify-center items-center h-full text-[#5a8bbd]">Loading crystals...</div>
+            <div className="flex justify-center items-center h-full text-[#5a8bbd]">{t("loadingAccounts")}</div>
           ) : filteredAccounts.length === 0 && !hasData ? (
             <div className="flex flex-col items-center justify-center h-full text-[#5a8bbd]/50 gap-6">
               <User className="w-20 h-20 lg:w-24 lg:h-24 opacity-50" />
-              <p className="text-xl lg:text-2xl font-semibold">Sube tu archivo JSON de MuhRo para empezar</p>
+              <p className="text-xl lg:text-2xl font-semibold">{t("welcomeMessage")}</p>
               <div className="flex flex-col sm:flex-row items-center gap-4 mt-4">
-                <button
-                  onClick={handleLoadDemo}
-                  className="flex items-center justify-center gap-2 px-6 lg:px-8 py-3 lg:py-4 bg-[#5a8bbd]/20 border-2 border-[#5a8bbd]/50 rounded-lg hover:bg-[#5a8bbd]/30 hover:border-[#5a8bbd] transition-all text-base lg:text-lg font-semibold text-[#cedce7]"
-                >
-                  Ver Demo con mis personajes
-                </button>
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImport}
-                  className="hidden"
-                  id="import-file-input-empty"
-                />
-                <label
-                  htmlFor="import-file-input-empty"
-                  className="flex items-center justify-center gap-2 px-6 lg:px-8 py-3 lg:py-4 bg-[#1c2b3a]/40 border-2 border-[#2b4e6b]/50 rounded-lg hover:bg-[#1c2b3a]/60 hover:border-[#5a8bbd]/50 transition-all cursor-pointer text-base lg:text-lg font-semibold text-[#cedce7]"
-                >
-                  <Upload className="w-5 h-5 lg:w-6 lg:h-6" />
-                  Importar JSON
-                </label>
+                  <button
+                    onClick={handleLoadDemo}
+                    className="flex items-center justify-center gap-2 px-6 lg:px-8 py-3 lg:py-4 bg-[#5a8bbd]/20 border-2 border-[#5a8bbd]/50 rounded-lg hover:bg-[#5a8bbd]/30 hover:border-[#5a8bbd] transition-all text-base lg:text-lg font-semibold text-[#cedce7]"
+                  >
+                    {t("demo")}
+                  </button>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImport}
+                    className="hidden"
+                    id="import-file-input-empty"
+                  />
+                  <label
+                    htmlFor="import-file-input-empty"
+                    className="flex items-center justify-center gap-2 px-6 lg:px-8 py-3 lg:py-4 bg-[#1c2b3a]/40 border-2 border-[#2b4e6b]/50 rounded-lg hover:bg-[#1c2b3a]/60 hover:border-[#5a8bbd]/50 transition-all cursor-pointer text-base lg:text-lg font-semibold text-[#cedce7]"
+                  >
+                    <Upload className="w-5 h-5 lg:w-6 lg:h-6" />
+                    {t("import")} JSON
+                  </label>
               </div>
             </div>
           ) : filteredAccounts.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-[#5a8bbd]/50 gap-4">
               <User className="w-16 h-16 lg:w-20 lg:h-20 opacity-50" />
-              <p className="text-lg lg:text-xl">No accounts found</p>
+              <p className="text-lg lg:text-xl">{t("noAccounts")}</p>
             </div>
           ) : (
             <DragDropContext onDragEnd={onDragEnd}>
@@ -670,13 +680,13 @@ export default function Dashboard() {
                                     </AlertDialogTrigger>
                                     <AlertDialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
                                       <AlertDialogHeader>
-                                        <AlertDialogTitle className="text-white">Delete Account?</AlertDialogTitle>
+                                        <AlertDialogTitle className="text-white">{t("deleteAccountTitle")}</AlertDialogTitle>
                                         <AlertDialogDescription className="text-[#a0c0e0]">
-                                          This will permanently delete <strong>{account.name}</strong> and all associated characters.
+                                          {t("deleteAccountMessage")} <strong>{account.name}</strong> {t("deleteAccountMessage2")}
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
-                                        <AlertDialogCancel className="bg-transparent border-[#2b4e6b] text-[#a0c0e0]">Cancel</AlertDialogCancel>
+                                        <AlertDialogCancel className="bg-transparent border-[#2b4e6b] text-[#a0c0e0]">{t("cancel")}</AlertDialogCancel>
                                         <AlertDialogAction 
                                           onClick={() => {
                                             deleteAccountMutation.mutate(account.id);
@@ -684,7 +694,7 @@ export default function Dashboard() {
                                           }}
                                           className="bg-red-900/50 border border-red-500 text-red-200"
                                         >
-                                          Delete
+                                          {t("delete")}
                                         </AlertDialogAction>
                                       </AlertDialogFooter>
                                     </AlertDialogContent>
@@ -707,7 +717,9 @@ export default function Dashboard() {
                                 ) : (
                                   <div className="flex items-center gap-2 opacity-30">
                                     <div className="w-6 h-6 lg:w-7 lg:h-7 rounded bg-[#0a1018]/40 border border-[#2b4e6b]/30" />
-                                    <span className="text-xs text-[#2b4e6b] italic">Empty</span>
+                                    <span className="text-xs text-[#2b4e6b] italic">
+                                      {getLanguage() === "es" ? "Vacío" : "Empty"}
+                                    </span>
                                   </div>
                                 )}
                               </div>
@@ -726,7 +738,7 @@ export default function Dashboard() {
 
         {/* Right Panel: Characters Grid */}
         <ROPanel 
-          title={selectedAccountId ? `Characters [${accounts?.find(a => a.id === selectedAccountId)?.name}]` : "Select an Account"} 
+          title={selectedAccountId ? `${t("characters")} [${accounts?.find(a => a.id === selectedAccountId)?.name}]` : t("selectAccount")} 
           className="lg:col-span-8 min-h-[70vh] lg:min-h-[75vh]"
           headerAction={selectedAccountId ? (
             <div className="flex items-center gap-3 lg:gap-4">
@@ -736,7 +748,7 @@ export default function Dashboard() {
                 size="md"
                 onClick={() => setInstanceMode(!instanceMode)}
                 className={`w-10 h-10 lg:w-12 lg:h-12 ${instanceMode ? "bg-[#2b4e6b] text-white" : "text-[#5a8bbd] hover:text-white"}`}
-                title="Instance Mode"
+                title={t("instanceMode")}
               >
                 <Skull className="w-5 h-5 lg:w-6 lg:h-6" />
               </ROButton>
@@ -758,7 +770,7 @@ export default function Dashboard() {
                     }
                   }}
                   className="w-10 h-10 lg:w-12 lg:h-12 text-[#5a8bbd] hover:text-white hover:border-[#5a8bbd]"
-                  title="Reset ticks for this account only"
+                  title={t("resetAccountTicks")}
                 >
                   <RotateCcw className="w-5 h-5 lg:w-6 lg:h-6" />
                 </ROButton>
@@ -795,7 +807,7 @@ export default function Dashboard() {
                 <Users className="w-16 h-16 lg:w-20 lg:h-20" />
               </div>
               <p className="text-xl lg:text-2xl">
-                {hasData ? "Select an account to view characters" : "Sube tu archivo JSON de MuhRo para empezar"}
+                {hasData ? t("selectAccountToView") : t("welcomeMessage")}
               </p>
               {!hasData && (
                 <div className="flex flex-col sm:flex-row items-center gap-4 mt-4">
@@ -803,7 +815,7 @@ export default function Dashboard() {
                     onClick={handleLoadDemo}
                     className="flex items-center justify-center gap-2 px-6 lg:px-8 py-3 lg:py-4 bg-[#5a8bbd]/20 border-2 border-[#5a8bbd]/50 rounded-lg hover:bg-[#5a8bbd]/30 hover:border-[#5a8bbd] transition-all text-base lg:text-lg font-semibold text-[#cedce7]"
                   >
-                    Ver Demo con mis personajes
+                    {t("demo")}
                   </button>
                   <input
                     type="file"
@@ -817,23 +829,27 @@ export default function Dashboard() {
                     className="flex items-center justify-center gap-2 px-6 lg:px-8 py-3 lg:py-4 bg-[#1c2b3a]/40 border-2 border-[#2b4e6b]/50 rounded-lg hover:bg-[#1c2b3a]/60 hover:border-[#5a8bbd]/50 transition-all cursor-pointer text-base lg:text-lg font-semibold text-[#cedce7]"
                   >
                     <Upload className="w-5 h-5 lg:w-6 lg:h-6" />
-                    Importar JSON
+                    {t("import")} JSON
                   </label>
                 </div>
               )}
             </div>
           ) : isLoadingCharacters ? (
-            <div className="h-full flex items-center justify-center text-[#5a8bbd] text-lg lg:text-xl">Summoning characters...</div>
+            <div className="h-full flex items-center justify-center text-[#5a8bbd] text-lg lg:text-xl">{t("loadingCharacters")}</div>
           ) : !characters?.length ? (
             <div className="h-full flex flex-col items-center justify-center text-[#5a8bbd]/50 gap-6">
-              <p className="text-lg lg:text-xl">No characters created yet.</p>
+              <p className="text-lg lg:text-xl">{t("noCharacters")}</p>
               <CharacterDialog accountId={selectedAccountId} />
             </div>
           ) : filteredCharacters.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-[#5a8bbd]/50 gap-4">
-              <p className="text-lg lg:text-xl">No characters match your search.</p>
+              <p className="text-lg lg:text-xl">{t("noCharactersMatch")}</p>
               {searchQuery && (
-                <p className="text-sm lg:text-base text-[#5a8bbd]/30">Try a different search term or clear the search.</p>
+                <p className="text-sm lg:text-base text-[#5a8bbd]/30">
+                  {getLanguage() === "es" 
+                    ? "Prueba con un término de búsqueda diferente o limpia la búsqueda."
+                    : "Try a different search term or clear the search."}
+                </p>
               )}
             </div>
           ) : instanceMode ? (
@@ -842,7 +858,7 @@ export default function Dashboard() {
                 {/* Header con nombres de instancias */}
                 <div className="flex border-b-2 border-[#2b4e6b] mb-3">
                   <div className="w-56 lg:w-64 flex-shrink-0 p-4 lg:p-5 border-r-2 border-[#2b4e6b] font-bold text-base lg:text-lg text-[#cedce7]">
-                    Character
+                    {getLanguage() === "es" ? "Personaje" : "Character"}
                   </div>
                   {instances.map((instance) => (
                     <Tooltip key={instance}>
@@ -886,17 +902,35 @@ export default function Dashboard() {
                           <input
                             type="checkbox"
                             checked={instanceStatus[char.id]?.[instance] || false}
-                            className="w-5 h-5 lg:w-6 lg:h-6 cursor-pointer"
                             onChange={(e) => {
-                              setInstanceStatus((prev) => ({
-                                ...prev,
-                                [char.id]: {
-                                  ...(prev[char.id] || {}),
-                                  [instance]: e.target.checked,
-                                },
-                              }));
+                              const isChecked = e.target.checked;
+                              
+                              // Si es HOL, marcar/desmarcar para todos los personajes
+                              if (instance === "HOL") {
+                                const allCharacters = allCharactersData || [];
+                                const updatedStatus: Record<number, Record<string, boolean>> = { ...instanceStatus };
+                                
+                                // Aplicar el estado a todos los personajes
+                                allCharacters.forEach((character) => {
+                                  if (!updatedStatus[character.id]) {
+                                    updatedStatus[character.id] = {};
+                                  }
+                                  updatedStatus[character.id][instance] = isChecked;
+                                });
+                                
+                                setInstanceStatus(updatedStatus);
+                              } else {
+                                // Para otras instancias, comportamiento normal
+                                setInstanceStatus((prev) => ({
+                                  ...prev,
+                                  [char.id]: {
+                                    ...(prev[char.id] || {}),
+                                    [instance]: isChecked,
+                                  },
+                                }));
+                              }
                             }}
-                            className="w-5 h-5 cursor-pointer accent-[#5a8bbd] rounded border-[#2b4e6b] bg-[#0a1018] checked:bg-[#5a8bbd]"
+                            className="w-5 h-5 lg:w-6 lg:h-6 cursor-pointer accent-[#5a8bbd] rounded border-[#2b4e6b] bg-[#0a1018] checked:bg-[#5a8bbd]"
                           />
                         </div>
                       ))}
@@ -952,18 +986,18 @@ export default function Dashboard() {
                           </AlertDialogTrigger>
                           <AlertDialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
                             <AlertDialogHeader>
-                              <AlertDialogTitle className="text-white">Delete Character?</AlertDialogTitle>
+                              <AlertDialogTitle className="text-white">{t("deleteCharacterTitle")}</AlertDialogTitle>
                               <AlertDialogDescription className="text-[#a0c0e0]">
-                                Are you sure you want to delete <strong>{char.name}</strong>? (Lv. {char.lvl} {char.class})
+                                {t("deleteCharacterMessage")} <strong>{char.name}</strong>? (Lv. {char.lvl} {char.class})
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-transparent border-[#2b4e6b] text-[#a0c0e0] hover:bg-white/5 hover:text-white">Cancel</AlertDialogCancel>
+                              <AlertDialogCancel className="bg-transparent border-[#2b4e6b] text-[#a0c0e0] hover:bg-white/5 hover:text-white">{t("cancel")}</AlertDialogCancel>
                               <AlertDialogAction 
                                 onClick={() => deleteCharacterMutation.mutate({ id: char.id, accountId: selectedAccountId })}
                                 className="bg-red-900/50 border border-red-500 text-red-200 hover:bg-red-800"
                               >
-                                Delete
+                                {t("deleteCharacterConfirm")}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -1019,18 +1053,18 @@ export default function Dashboard() {
                           </AlertDialogTrigger>
                           <AlertDialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
                             <AlertDialogHeader>
-                              <AlertDialogTitle className="text-white">Delete Character?</AlertDialogTitle>
+                              <AlertDialogTitle className="text-white">{t("deleteCharacterTitle")}</AlertDialogTitle>
                               <AlertDialogDescription className="text-[#a0c0e0]">
-                                Are you sure you want to delete <strong>{char.name}</strong>? (Lv. {char.lvl} {char.class})
+                                {t("deleteCharacterMessage")} <strong>{char.name}</strong>? (Lv. {char.lvl} {char.class})
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-transparent border-[#2b4e6b] text-[#a0c0e0] hover:bg-white/5 hover:text-white">Cancel</AlertDialogCancel>
+                              <AlertDialogCancel className="bg-transparent border-[#2b4e6b] text-[#a0c0e0] hover:bg-white/5 hover:text-white">{t("cancel")}</AlertDialogCancel>
                               <AlertDialogAction 
                                 onClick={() => deleteCharacterMutation.mutate({ id: char.id, accountId: selectedAccountId })}
                                 className="bg-red-900/50 border border-red-500 text-red-200 hover:bg-red-800"
                               >
-                                Delete
+                                {t("deleteCharacterConfirm")}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
