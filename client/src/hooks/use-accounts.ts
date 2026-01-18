@@ -66,3 +66,27 @@ export function useDeleteAccount() {
     },
   });
 }
+
+export function useDeleteAllAccounts() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      localStorage.deleteAllAccounts();
+      return Promise.resolve();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["characters"] });
+      toast({ 
+        title: "Todas las cuentas eliminadas", 
+        description: "Se han eliminado todas las cuentas y personajes",
+        variant: "destructive"
+      });
+    },
+    onError: (error: Error) => {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    },
+  });
+}

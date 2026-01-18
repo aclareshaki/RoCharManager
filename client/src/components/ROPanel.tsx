@@ -16,14 +16,14 @@ export function ROPanel({ title, children, className, headerAction }: ROPanelPro
       className
     )}>
       {title && (
-        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#1c2b3a] to-[#121c26] border-b border-[#2b4e6b]">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#cedce7] drop-shadow-sm select-none">
+        <div className="flex items-center justify-between px-5 lg:px-6 py-4 lg:py-5 bg-gradient-to-r from-[#1c2b3a] to-[#121c26] border-b border-[#2b4e6b]">
+          <h2 className="text-base lg:text-lg font-bold uppercase tracking-wider text-[#cedce7] drop-shadow-sm select-none">
             {title}
           </h2>
           {headerAction && <div>{headerAction}</div>}
         </div>
       )}
-      <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+      <div className="flex-1 overflow-auto p-5 lg:p-6 custom-scrollbar">
         {children}
       </div>
     </div>

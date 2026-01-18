@@ -76,6 +76,11 @@ export function deleteAccount(id: number): void {
   saveCharacters(filteredCharacters);
 }
 
+export function deleteAllAccounts(): void {
+  saveAccounts([]);
+  saveCharacters([]);
+}
+
 // Characters
 export function getCharacters(accountId?: number): Character[] {
   if (typeof window === "undefined") return [];

@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
-import { useAccounts, useDeleteAccount } from "@/hooks/use-accounts";
+import { useAccounts, useDeleteAccount, useDeleteAllAccounts } from "@/hooks/use-accounts";
 import { useCharacters, useDeleteCharacter } from "@/hooks/use-characters";
 import { ROPanel, ROButton, ROInput } from "@/components/ROPanel";
 import { ClassSprite } from "@/components/ClassSprite";
 import { AccountDialog } from "@/components/AccountDialog";
 import { CharacterDialog } from "@/components/CharacterDialog";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
-import { Search, Trash2, User, Users, Download, Upload, Edit, GripVertical, Grid3x3, List, Skull, RotateCcw } from "lucide-react";
+import { Search, Trash2, User, Users, Download, Upload, Edit, GripVertical, Grid3x3, List, Skull, RotateCcw, Trash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { useQueryClient } from "@tanstack/react-query";
 import * as localStorage from "@/lib/localStorage";
@@ -22,8 +23,16 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [instanceMode, setInstanceMode] = useState(false);
   
-  // Instancias disponibles
-  const instances = ["LOF", "NGH", "HGH", "GHC"];
+  // Instancias disponibles con sus nombres completos
+  const instances = ["NGH", "HGH", "COGH", "LOF", "HAL", "CT"];
+  const instanceNames: Record<string, string> = {
+    "NGH": "Glast heim normal",
+    "HGH": "Glast heim hard",
+    "COGH": "Glast Heim challenge",
+    "LOF": "Lake of fire",
+    "HAL": "Hall of life",
+    "CT": "Constellation tower"
+  };
   
   // Estado de instancias por personaje (characterId -> instanceName -> checked)
   const [instanceStatus, setInstanceStatus] = useState<Record<number, Record<string, boolean>>>({});
@@ -33,6 +42,8 @@ export default function Dashboard() {
   const { data: allCharactersData } = useCharacters();
   const [localAccounts, setLocalAccounts] = useState<any[]>([]);
   const [hasData, setHasData] = useState(false);
+  const deleteAllAccountsMutation = useDeleteAllAccounts();
+  const deleteAccountMutation = useDeleteAccount();
 
   useEffect(() => {
     setHasData(localStorage.hasData());
@@ -106,7 +117,6 @@ export default function Dashboard() {
     return matchesAllConditions(char, conditions);
   }) || [];
   
-  const deleteAccountMutation = useDeleteAccount();
   const deleteCharacterMutation = useDeleteCharacter();
   const { toast } = useToast();
 
@@ -288,32 +298,32 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-7xl mx-auto flex flex-col gap-6">
+    <div className="min-h-screen p-6 md:p-10 lg:p-12">
+      <div className="w-full max-w-[95%] 2xl:max-w-[90%] mx-auto flex flex-col gap-8 lg:gap-10">
       {/* Header Area */}
-      <header className="flex flex-col gap-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 flex items-center justify-center bg-[#1c2b3a] rounded-full border-2 border-[#5a8bbd] shadow-[0_0_15px_rgba(90,139,189,0.3)] overflow-hidden">
+      <header className="flex flex-col gap-6 lg:gap-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="flex items-center gap-4 lg:gap-5">
+            <div className="w-20 h-20 lg:w-24 lg:h-24 flex items-center justify-center bg-[#1c2b3a] rounded-full border-2 border-[#5a8bbd] shadow-[0_0_15px_rgba(90,139,189,0.3)] overflow-hidden">
               <img src="/assets/cow_logo_final.png" alt="Ragnarok Online Logo" className="w-full h-full object-cover" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-[#cedce7] tracking-tight">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#cedce7] tracking-tight">
                 Ragnarok Online <span className="text-[#5a8bbd]">Char Manager</span>
               </h1>
-              <p className="text-[#a0c0e0] text-sm uppercase tracking-widest opacity-70">Character Management System</p>
+              <p className="text-[#a0c0e0] text-base md:text-lg uppercase tracking-widest opacity-70 mt-1">Character Management System</p>
             </div>
           </div>
         </div>
 
         {/* Search bar and Import/Export buttons */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-4 flex items-center gap-0 bg-[#0a1018]/80 border border-[#2b4e6b]/50 rounded overflow-hidden shadow-2xl h-11">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+          <div className="lg:col-span-4 flex items-center gap-0 bg-[#0a1018]/80 border border-[#2b4e6b]/50 rounded-lg overflow-hidden shadow-2xl h-14 lg:h-16">
             <div className="flex-1 flex items-center relative h-full">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5a8bbd]/40 pointer-events-none z-10" />
+              <Search className="absolute left-5 lg:left-6 top-1/2 -translate-y-1/2 w-5 h-5 lg:w-6 lg:h-6 text-[#5a8bbd]/40 pointer-events-none z-10" />
               <ROInput 
                 placeholder="SEARCH ACCOUNT, CHARACTER, CLASS, LEVEL (e.g. >250)..." 
-                className="w-full h-full border-0 bg-[#0a1018]/80 pl-11 pr-4 text-left placeholder:text-[#2b4e6b]/40 placeholder:uppercase placeholder:text-[10px] placeholder:tracking-widest focus:outline-none focus:ring-0"
+                className="w-full h-full border-0 bg-[#0a1018]/80 pl-14 lg:pl-16 pr-5 lg:pr-6 text-base lg:text-lg text-left placeholder:text-[#2b4e6b]/40 placeholder:uppercase placeholder:text-xs lg:text-sm placeholder:tracking-widest focus:outline-none focus:ring-0"
                 value={searchQuery}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -349,11 +359,11 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="lg:col-span-8 flex items-center justify-end gap-2">
+          <div className="lg:col-span-8 flex items-center justify-end gap-3 lg:gap-4">
             {/* Reset all ticks button */}
             <ROButton
               variant="icon"
-              size="sm"
+              size="md"
               onClick={() => {
                 setInstanceStatus({});
                 toast({
@@ -361,10 +371,10 @@ export default function Dashboard() {
                   description: "Todos los ticks de instancias han sido eliminados.",
                 });
               }}
-              className="text-[#5a8bbd] hover:text-white hover:border-[#5a8bbd]"
+              className="text-[#5a8bbd] hover:text-white hover:border-[#5a8bbd] w-12 h-12 lg:w-14 lg:h-14"
               title="Reset all ticks for all accounts"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-5 h-5 lg:w-6 lg:h-6" />
             </ROButton>
             
             <input
@@ -376,37 +386,82 @@ export default function Dashboard() {
             />
             <label
               htmlFor="import-file-input"
-              className="flex items-center justify-center px-6 w-32 h-11 bg-[#1c2b3a]/40 border border-[#2b4e6b]/30 rounded hover:bg-[#5a8bbd]/10 transition-colors group cursor-pointer"
+              className="flex items-center justify-center px-8 lg:px-10 w-auto min-w-[140px] lg:min-w-[160px] h-14 lg:h-16 bg-[#1c2b3a]/40 border border-[#2b4e6b]/30 rounded-lg hover:bg-[#5a8bbd]/10 transition-colors group cursor-pointer"
             >
-              <Upload className="w-4 h-4 text-[#5a8bbd]/60 group-hover:text-[#5a8bbd] mr-2" />
-              <span className="text-[10px] font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">Import</span>
+              <Upload className="w-5 h-5 lg:w-6 lg:h-6 text-[#5a8bbd]/60 group-hover:text-[#5a8bbd] mr-3" />
+              <span className="text-sm lg:text-base font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">Import</span>
             </label>
             <button 
               onClick={handleExport}
-              className="flex items-center justify-center px-6 w-32 h-11 bg-[#1c2b3a]/40 border border-[#2b4e6b]/30 rounded hover:bg-[#5a8bbd]/10 transition-colors group"
+              className="flex items-center justify-center px-8 lg:px-10 w-auto min-w-[140px] lg:min-w-[160px] h-14 lg:h-16 bg-[#1c2b3a]/40 border border-[#2b4e6b]/30 rounded-lg hover:bg-[#5a8bbd]/10 transition-colors group"
             >
-              <Download className="w-4 h-4 text-[#5a8bbd]/60 group-hover:text-[#5a8bbd] mr-2" />
-              <span className="text-[10px] font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">Export</span>
+              <Download className="w-5 h-5 lg:w-6 lg:h-6 text-[#5a8bbd]/60 group-hover:text-[#5a8bbd] mr-3" />
+              <span className="text-sm lg:text-base font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">Export</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-[600px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 flex-1 min-h-[70vh] lg:min-h-[75vh]">
         
         {/* Left Panel: Accounts List */}
         <ROPanel 
           title="Accounts" 
-          className="lg:col-span-4 h-[600px]"
-          headerAction={<AccountDialog />}
+          className="lg:col-span-4 h-[70vh] lg:h-[75vh]"
+          headerAction={
+            <div className="flex items-center gap-2 lg:gap-3">
+              {accounts && accounts.length > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <ROButton
+                      variant="icon"
+                      size="md"
+                      className="w-10 h-10 lg:w-12 lg:h-12 hover:border-red-500 hover:text-red-400"
+                      title="Eliminar todas las cuentas"
+                    >
+                      <Trash className="w-5 h-5 lg:w-6 lg:h-6" />
+                    </ROButton>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-white text-lg lg:text-xl">
+                        ¿Eliminar todas las cuentas?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-[#a0c0e0] text-base lg:text-lg">
+                        Esta acción eliminará permanentemente <strong>todas las {accounts.length} cuentas</strong> y todos los personajes asociados.
+                        <br />
+                        <br />
+                        <strong className="text-red-400">Esta acción no se puede deshacer.</strong>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-3">
+                      <AlertDialogCancel className="bg-transparent border-[#2b4e6b] text-[#a0c0e0] hover:bg-white/5 hover:text-white px-6 py-2 text-base">
+                        Cancelar
+                      </AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => {
+                          deleteAllAccountsMutation.mutate();
+                          setSelectedAccountId(null);
+                        }}
+                        className="bg-red-900/50 border border-red-500 text-red-200 hover:bg-red-800 px-6 py-2 text-base"
+                      >
+                        Eliminar Todo
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              <AccountDialog />
+            </div>
+          }
         >
           {isLoadingAccounts ? (
             <div className="flex justify-center items-center h-full text-[#5a8bbd]">Loading crystals...</div>
           ) : filteredAccounts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-[#5a8bbd]/50 gap-2">
-              <User className="w-12 h-12 opacity-50" />
-              <p>No accounts found</p>
+            <div className="flex flex-col items-center justify-center h-64 text-[#5a8bbd]/50 gap-4">
+              <User className="w-16 h-16 lg:w-20 lg:h-20 opacity-50" />
+              <p className="text-lg lg:text-xl">No accounts found</p>
             </div>
           ) : (
             <DragDropContext onDragEnd={onDragEnd}>
@@ -415,7 +470,7 @@ export default function Dashboard() {
                   <div 
                     {...provided.droppableProps}
                     ref={provided.innerRef}
-                    className="space-y-3 pr-2"
+                    className="space-y-4 lg:space-y-5 pr-3"
                   >
                     {filteredAccounts.map((account, index) => {
                       const allAccountCharacters = allCharactersData?.filter(c => c.accountId === account.id) || [];
@@ -439,7 +494,7 @@ export default function Dashboard() {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               className={`
-                                group relative flex flex-col p-3 rounded cursor-pointer transition-all border
+                                group relative flex flex-col p-4 lg:p-5 rounded-lg cursor-pointer transition-all border
                                 ${selectedAccountId === account.id 
                                   ? "bg-[#1c2b3a] border-[#5a8bbd] shadow-[inset_0_0_10px_rgba(90,139,189,0.2)]" 
                                   : "bg-transparent border-transparent hover:bg-[#1c2b3a]/50 hover:border-[#2b4e6b]"
@@ -449,31 +504,31 @@ export default function Dashboard() {
                               onClick={() => setSelectedAccountId(account.id)}
                             >
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 flex-1">
-                                  <div {...provided.dragHandleProps} className="p-1 cursor-grab active:cursor-grabbing text-[#2b4e6b] hover:text-[#5a8bbd]">
-                                    <GripVertical className="w-4 h-4" />
+                                <div className="flex items-center gap-3 lg:gap-4 flex-1">
+                                  <div {...provided.dragHandleProps} className="p-1.5 cursor-grab active:cursor-grabbing text-[#2b4e6b] hover:text-[#5a8bbd]">
+                                    <GripVertical className="w-5 h-5 lg:w-6 lg:h-6" />
                                   </div>
                                   <div className="pl-1">
-                                    <h3 className={`font-bold text-sm leading-tight ${selectedAccountId === account.id ? "text-white" : "text-[#a0c0e0] group-hover:text-white"}`}>
+                                    <h3 className={`font-bold text-base lg:text-lg leading-tight ${selectedAccountId === account.id ? "text-white" : "text-[#a0c0e0] group-hover:text-white"}`}>
                                       {account.name}
                                     </h3>
-                                    <p className="text-[10px] text-[#5a8bbd] opacity-70">ID: {account.id}</p>
+                                    <p className="text-xs lg:text-sm text-[#5a8bbd] opacity-70 mt-0.5">ID: {account.id}</p>
                                   </div>
                                 </div>
 
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <AccountDialog 
                                     account={account} 
                                     trigger={
-                                      <ROButton variant="icon" size="sm" onClick={(e) => e.stopPropagation()}>
-                                        <Edit className="w-3 h-3" />
+                                      <ROButton variant="icon" size="md" onClick={(e) => e.stopPropagation()} className="w-9 h-9 lg:w-10 lg:h-10">
+                                        <Edit className="w-4 h-4 lg:w-5 lg:h-5" />
                                       </ROButton>
                                     } 
                                   />
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                      <ROButton variant="icon" size="sm" className="hover:border-red-500 hover:text-red-400" onClick={(e) => e.stopPropagation()}>
-                                        <Trash2 className="w-3 h-3" />
+                                      <ROButton variant="icon" size="md" className="hover:border-red-500 hover:text-red-400 w-9 h-9 lg:w-10 lg:h-10" onClick={(e) => e.stopPropagation()}>
+                                        <Trash2 className="w-4 h-4 lg:w-5 lg:h-5" />
                                       </ROButton>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
@@ -501,21 +556,21 @@ export default function Dashboard() {
                               </div>
 
                               {/* Quick Glance Characters - Displayed below name/ID */}
-                              <div className="mt-1 flex flex-col gap-2 pl-7 min-h-[24px]">
+                              <div className="mt-2 lg:mt-3 flex flex-col gap-2 lg:gap-3 pl-9 lg:pl-11 min-h-[28px] lg:min-h-[32px]">
                                 {accountCharacters && accountCharacters.length > 0 ? (
                                   accountCharacters.map(char => (
-                                    <div key={char.id} className="flex items-center gap-1.5 bg-[#0a1018]/60 px-2 py-1 rounded border border-[#5a8bbd]/20 hover:border-[#5a8bbd]/40 transition-colors shadow-sm">
-                                      <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                                    <div key={char.id} className="flex items-center gap-2 lg:gap-2.5 bg-[#0a1018]/60 px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg border border-[#5a8bbd]/20 hover:border-[#5a8bbd]/40 transition-colors shadow-sm">
+                                      <div className="w-6 h-6 lg:w-7 lg:h-7 flex items-center justify-center flex-shrink-0">
                                         <ClassSprite className={char.class} alt={char.name} isIconOnly />
                                       </div>
-                                      <span className="text-[10px] font-bold text-white leading-none">{char.name}</span>
-                                      <span className="text-[9px] font-mono text-[#5a8bbd] leading-none">Lv. {char.lvl}</span>
+                                      <span className="text-xs lg:text-sm font-bold text-white leading-none">{char.name}</span>
+                                      <span className="text-[10px] lg:text-xs font-mono text-[#5a8bbd] leading-none">Lv. {char.lvl}</span>
                                     </div>
                                   ))
                                 ) : (
-                                  <div className="flex items-center gap-1.5 opacity-30">
-                                    <div className="w-5 h-5 rounded bg-[#0a1018]/40 border border-[#2b4e6b]/30" />
-                                    <span className="text-[9px] text-[#2b4e6b] italic">Empty</span>
+                                  <div className="flex items-center gap-2 opacity-30">
+                                    <div className="w-6 h-6 lg:w-7 lg:h-7 rounded bg-[#0a1018]/40 border border-[#2b4e6b]/30" />
+                                    <span className="text-xs text-[#2b4e6b] italic">Empty</span>
                                   </div>
                                 )}
                               </div>
@@ -535,25 +590,25 @@ export default function Dashboard() {
         {/* Right Panel: Characters Grid */}
         <ROPanel 
           title={selectedAccountId ? `Characters [${accounts?.find(a => a.id === selectedAccountId)?.name}]` : "Select an Account"} 
-          className="lg:col-span-8 min-h-[500px]"
+          className="lg:col-span-8 min-h-[70vh] lg:min-h-[75vh]"
           headerAction={selectedAccountId ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 lg:gap-4">
               {/* Instance mode toggle button */}
               <ROButton
                 variant="icon"
-                size="sm"
+                size="md"
                 onClick={() => setInstanceMode(!instanceMode)}
-                className={instanceMode ? "bg-[#2b4e6b] text-white" : "text-[#5a8bbd] hover:text-white"}
+                className={`w-10 h-10 lg:w-12 lg:h-12 ${instanceMode ? "bg-[#2b4e6b] text-white" : "text-[#5a8bbd] hover:text-white"}`}
                 title="Instance Mode"
               >
-                <Skull className="w-4 h-4" />
+                <Skull className="w-5 h-5 lg:w-6 lg:h-6" />
               </ROButton>
               
               {/* Reset ticks for current account only */}
               {instanceMode && (
                 <ROButton
                   variant="icon"
-                  size="sm"
+                  size="md"
                   onClick={() => {
                     if (characters) {
                       const updatedStatus = { ...instanceStatus };
@@ -565,31 +620,31 @@ export default function Dashboard() {
                       setInstanceStatus(updatedStatus);
                     }
                   }}
-                  className="text-[#5a8bbd] hover:text-white hover:border-[#5a8bbd]"
+                  className="w-10 h-10 lg:w-12 lg:h-12 text-[#5a8bbd] hover:text-white hover:border-[#5a8bbd]"
                   title="Reset ticks for this account only"
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  <RotateCcw className="w-5 h-5 lg:w-6 lg:h-6" />
                 </ROButton>
               )}
               
               {/* Vista toggle buttons */}
               {!instanceMode && (
-                <div className="flex items-center gap-1 bg-[#0a1018] border border-[#2b4e6b] rounded p-1">
+                <div className="flex items-center gap-1.5 bg-[#0a1018] border border-[#2b4e6b] rounded-lg p-1.5">
                   <ROButton
                     variant="icon"
-                    size="sm"
+                    size="md"
                     onClick={() => setViewMode("grid")}
-                    className={viewMode === "grid" ? "bg-[#2b4e6b] text-white" : "text-[#5a8bbd] hover:text-white"}
+                    className={`w-10 h-10 lg:w-12 lg:h-12 ${viewMode === "grid" ? "bg-[#2b4e6b] text-white" : "text-[#5a8bbd] hover:text-white"}`}
                   >
-                    <Grid3x3 className="w-4 h-4" />
+                    <Grid3x3 className="w-5 h-5 lg:w-6 lg:h-6" />
                   </ROButton>
                   <ROButton
                     variant="icon"
-                    size="sm"
+                    size="md"
                     onClick={() => setViewMode("list")}
-                    className={viewMode === "list" ? "bg-[#2b4e6b] text-white" : "text-[#5a8bbd] hover:text-white"}
+                    className={`w-10 h-10 lg:w-12 lg:h-12 ${viewMode === "list" ? "bg-[#2b4e6b] text-white" : "text-[#5a8bbd] hover:text-white"}`}
                   >
-                    <List className="w-4 h-4" />
+                    <List className="w-5 h-5 lg:w-6 lg:h-6" />
                   </ROButton>
                 </div>
               )}
@@ -598,41 +653,47 @@ export default function Dashboard() {
           ) : null}
         >
           {!selectedAccountId ? (
-            <div className="h-full flex flex-col items-center justify-center text-[#5a8bbd]/40 gap-4">
-              <div className="w-32 h-32 rounded-full border-4 border-[#2b4e6b] border-dashed flex items-center justify-center">
-                <Users className="w-12 h-12" />
+            <div className="h-full flex flex-col items-center justify-center text-[#5a8bbd]/40 gap-6">
+              <div className="w-40 h-40 lg:w-48 lg:h-48 rounded-full border-4 border-[#2b4e6b] border-dashed flex items-center justify-center">
+                <Users className="w-16 h-16 lg:w-20 lg:h-20" />
               </div>
-              <p className="text-lg">Select an account to view characters</p>
+              <p className="text-xl lg:text-2xl">Select an account to view characters</p>
             </div>
           ) : isLoadingCharacters ? (
-            <div className="h-full flex items-center justify-center text-[#5a8bbd]">Summoning characters...</div>
+            <div className="h-full flex items-center justify-center text-[#5a8bbd] text-lg lg:text-xl">Summoning characters...</div>
           ) : !characters?.length ? (
-            <div className="h-full flex flex-col items-center justify-center text-[#5a8bbd]/50 gap-4">
-              <p>No characters created yet.</p>
+            <div className="h-full flex flex-col items-center justify-center text-[#5a8bbd]/50 gap-6">
+              <p className="text-lg lg:text-xl">No characters created yet.</p>
               <CharacterDialog accountId={selectedAccountId} />
             </div>
           ) : filteredCharacters.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-[#5a8bbd]/50 gap-4">
-              <p>No characters match your search.</p>
+              <p className="text-lg lg:text-xl">No characters match your search.</p>
               {searchQuery && (
-                <p className="text-xs text-[#5a8bbd]/30">Try a different search term or clear the search.</p>
+                <p className="text-sm lg:text-base text-[#5a8bbd]/30">Try a different search term or clear the search.</p>
               )}
             </div>
           ) : instanceMode ? (
             <div className="w-full overflow-auto">
               <div className="inline-block min-w-full">
                 {/* Header con nombres de instancias */}
-                <div className="flex border-b-2 border-[#2b4e6b] mb-2">
-                  <div className="w-48 flex-shrink-0 p-2 border-r-2 border-[#2b4e6b] font-bold text-sm text-[#cedce7]">
+                <div className="flex border-b-2 border-[#2b4e6b] mb-3">
+                  <div className="w-56 lg:w-64 flex-shrink-0 p-4 lg:p-5 border-r-2 border-[#2b4e6b] font-bold text-base lg:text-lg text-[#cedce7]">
                     Character
                   </div>
                   {instances.map((instance) => (
-                    <div
-                      key={instance}
-                      className="flex-1 min-w-[120px] p-2 text-center font-bold text-sm text-[#cedce7] border-r-2 last:border-r-0 border-[#2b4e6b]"
-                    >
-                      {instance}
-                    </div>
+                    <Tooltip key={instance}>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="flex-1 min-w-[140px] lg:min-w-[160px] p-4 lg:p-5 text-center font-bold text-base lg:text-lg text-[#cedce7] border-r-2 last:border-r-0 border-[#2b4e6b] cursor-help"
+                        >
+                          {instance}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-sm lg:text-base">{instanceNames[instance]}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   ))}
                 </div>
                 
@@ -641,13 +702,13 @@ export default function Dashboard() {
                   {filteredCharacters.map((char) => (
                     <div key={char.id} className="flex border-b border-[#2b4e6b]/50 hover:bg-[#0a1018]/50 transition-colors">
                       {/* Columna de personaje */}
-                      <div className="w-48 flex-shrink-0 p-3 border-r-2 border-[#2b4e6b] flex items-center gap-2">
-                        <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                      <div className="w-56 lg:w-64 flex-shrink-0 p-4 lg:p-5 border-r-2 border-[#2b4e6b] flex items-center gap-3 lg:gap-4">
+                        <div className="w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center flex-shrink-0">
                           <ClassSprite className={char.class} alt={char.name} isIconOnly />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-bold text-white leading-none">{char.name}</div>
-                          <div className="text-xs text-[#5a8bbd] leading-none mt-2">
+                          <div className="text-base lg:text-lg font-bold text-white leading-none">{char.name}</div>
+                          <div className="text-sm lg:text-base text-[#5a8bbd] leading-none mt-2">
                             {char.class} Lv.{char.lvl}
                           </div>
                         </div>
@@ -657,11 +718,12 @@ export default function Dashboard() {
                       {instances.map((instance) => (
                         <div
                           key={instance}
-                          className="flex-1 min-w-[120px] p-3 flex items-center justify-center border-r-2 last:border-r-0 border-[#2b4e6b]"
+                          className="flex-1 min-w-[140px] lg:min-w-[160px] p-4 lg:p-5 flex items-center justify-center border-r-2 last:border-r-0 border-[#2b4e6b]"
                         >
                           <input
                             type="checkbox"
                             checked={instanceStatus[char.id]?.[instance] || false}
+                            className="w-5 h-5 lg:w-6 lg:h-6 cursor-pointer"
                             onChange={(e) => {
                               setInstanceStatus((prev) => ({
                                 ...prev,
@@ -681,7 +743,7 @@ export default function Dashboard() {
               </div>
             </div>
           ) : viewMode === "grid" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 lg:gap-8">
               <AnimatePresence>
                 {filteredCharacters.map((char) => (
                   <motion.div
@@ -691,38 +753,38 @@ export default function Dashboard() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <div className="group relative bg-[#0a1018] border border-[#2b4e6b] rounded transition-colors overflow-hidden">
+                    <div className="group relative bg-[#0a1018] border border-[#2b4e6b] rounded-lg transition-colors overflow-hidden">
                       {/* Character Card Header */}
-                      <div className="flex justify-between items-start p-3 bg-gradient-to-b from-[#1c2b3a] to-[#121c26] border-b border-[#2b4e6b]">
+                      <div className="flex justify-between items-start p-4 lg:p-5 bg-gradient-to-b from-[#1c2b3a] to-[#121c26] border-b border-[#2b4e6b]">
                         <div>
-                          <h4 className="font-bold text-white text-sm">{char.name}</h4>
-                          <span className="text-xs text-[#5a8bbd] block mt-2">{char.class}</span>
+                          <h4 className="font-bold text-white text-base lg:text-lg">{char.name}</h4>
+                          <span className="text-sm lg:text-base text-[#5a8bbd] block mt-2">{char.class}</span>
                         </div>
-                        <div className="bg-[#0a1018] px-2 py-1 rounded border border-[#2b4e6b] text-xs font-mono text-[#cedce7]">
+                        <div className="bg-[#0a1018] px-3 py-1.5 rounded-lg border border-[#2b4e6b] text-sm lg:text-base font-mono text-[#cedce7]">
                           Lv. {char.lvl}
                         </div>
                       </div>
 
                       {/* Character Sprite Area */}
-                      <div className="relative h-40 p-4 flex items-center justify-center bg-[#0a1018] pointer-events-none">
+                      <div className="relative h-48 lg:h-56 p-5 lg:p-6 flex items-center justify-center bg-[#0a1018] pointer-events-none">
                         <ClassSprite className={char.class} alt={char.name} />
                       </div>
 
                       {/* Actions Overlay */}
-                      <div className="absolute inset-x-0 bottom-0 p-2 bg-[#0a1018]/90 backdrop-blur border-t border-[#2b4e6b] opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex justify-end gap-2 z-50 pointer-events-none group-hover:pointer-events-auto">
+                      <div className="absolute inset-x-0 bottom-0 p-3 lg:p-4 bg-[#0a1018]/90 backdrop-blur border-t border-[#2b4e6b] opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex justify-end gap-3 z-50 pointer-events-none group-hover:pointer-events-auto">
                         <CharacterDialog 
                           accountId={selectedAccountId} 
                           character={char} 
                           trigger={
-                            <ROButton variant="icon" size="sm" type="button" className="cursor-pointer pointer-events-auto">
-                              <Edit className="w-3 h-3" />
+                            <ROButton variant="icon" size="md" type="button" className="w-10 h-10 lg:w-12 lg:h-12 cursor-pointer pointer-events-auto">
+                              <Edit className="w-5 h-5 lg:w-6 lg:h-6" />
                             </ROButton>
                           }
                         />
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <ROButton variant="icon" size="sm" type="button" className="hover:border-red-500 hover:text-red-400 cursor-pointer pointer-events-auto">
-                              <Trash2 className="w-3 h-3" />
+                            <ROButton variant="icon" size="md" type="button" className="w-10 h-10 lg:w-12 lg:h-12 hover:border-red-500 hover:text-red-400 cursor-pointer pointer-events-auto">
+                              <Trash2 className="w-5 h-5 lg:w-6 lg:h-6" />
                             </ROButton>
                           </AlertDialogTrigger>
                           <AlertDialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
@@ -750,7 +812,7 @@ export default function Dashboard() {
               </AnimatePresence>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3 lg:gap-4">
               <AnimatePresence>
                 {filteredCharacters.map((char) => (
                   <motion.div
@@ -760,35 +822,35 @@ export default function Dashboard() {
                     exit={{ opacity: 0, x: 10 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <div className="group flex items-center gap-3 bg-[#0a1018]/60 px-3 py-2 rounded border border-[#5a8bbd]/20 hover:border-[#5a8bbd]/40 transition-colors shadow-sm">
+                    <div className="group flex items-center gap-4 lg:gap-5 bg-[#0a1018]/60 px-4 lg:px-6 py-3 lg:py-4 rounded-lg border border-[#5a8bbd]/20 hover:border-[#5a8bbd]/40 transition-colors shadow-sm">
                       {/* Icon */}
-                      <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+                      <div className="w-14 h-14 lg:w-16 lg:h-16 flex items-center justify-center flex-shrink-0">
                         <ClassSprite className={char.class} alt={char.name} isIconOnly />
                       </div>
                       
                       {/* Name and Class */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-white leading-none">{char.name}</span>
-                          <span className="text-xs font-mono text-[#5a8bbd] leading-none">Lv. {char.lvl}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-base lg:text-lg font-bold text-white leading-none">{char.name}</span>
+                          <span className="text-sm lg:text-base font-mono text-[#5a8bbd] leading-none">Lv. {char.lvl}</span>
                         </div>
-                        <span className="text-xs text-[#5a8bbd] block leading-none mt-2">{char.class}</span>
+                        <span className="text-sm lg:text-base text-[#5a8bbd] block leading-none mt-2">{char.class}</span>
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <CharacterDialog 
                           accountId={selectedAccountId} 
                           character={char} 
                           trigger={
-                            <ROButton variant="icon" size="sm" type="button">
-                              <Edit className="w-3 h-3" />
+                            <ROButton variant="icon" size="md" type="button" className="w-10 h-10 lg:w-12 lg:h-12">
+                              <Edit className="w-5 h-5 lg:w-6 lg:h-6" />
                             </ROButton>
                           }
                         />
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <ROButton variant="icon" size="sm" type="button" className="hover:border-red-500 hover:text-red-400">
+                            <ROButton variant="icon" size="md" type="button" className="w-10 h-10 lg:w-12 lg:h-12 hover:border-red-500 hover:text-red-400">
                               <Trash2 className="w-3 h-3" />
                             </ROButton>
                           </AlertDialogTrigger>
