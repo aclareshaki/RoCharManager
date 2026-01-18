@@ -5,7 +5,6 @@ import { ROPanel, ROButton, ROInput } from "@/components/ROPanel";
 import { ClassSprite } from "@/components/ClassSprite";
 import { AccountDialog } from "@/components/AccountDialog";
 import { CharacterDialog } from "@/components/CharacterDialog";
-import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { Search, Trash2, User, Users, Download, Upload, Edit, GripVertical, Grid3x3, List, Skull, RotateCcw, Trash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,13 +23,13 @@ export default function Dashboard() {
   const [instanceMode, setInstanceMode] = useState(false);
   
   // Instancias disponibles con sus nombres completos
-  const instances = ["NGH", "HGH", "COGH", "LOF", "HAL", "CT"];
+  const instances = ["NGH", "HGH", "COGH", "LOF", "HOL", "CT"];
   const instanceNames: Record<string, string> = {
     "NGH": "Glast heim normal",
     "HGH": "Glast heim hard",
     "COGH": "Glast Heim challenge",
     "LOF": "Lake of fire",
-    "HAL": "Hall of life",
+    "HOL": "Hall of life",
     "CT": "Constellation tower"
   };
   
@@ -292,10 +291,67 @@ export default function Dashboard() {
     setHasData(localStorage.hasData());
   };
 
-  // Show welcome screen if no data
-  if (!hasData && !isLoadingAccounts) {
-    return <WelcomeScreen onImport={handleRefresh} />;
-  }
+  const handleLoadDemo = async () => {
+    try {
+      const response = await fetch("/example-data.json");
+      if (!response.ok) {
+        throw new Error("No se pudo cargar el archivo de ejemplo");
+      }
+      const jsonData = await response.json();
+      
+      // Procesar el JSON igual que en handleImport
+      let accountsToImport: any[] = [];
+      let charactersToImport: any[] = [];
+
+      if (Array.isArray(jsonData)) {
+        accountsToImport = jsonData.map((acc: any) => ({
+          id: acc.id,
+          name: acc.name,
+          sortOrder: acc.sortOrder || 0,
+        }));
+
+        for (const acc of jsonData) {
+          if (acc.characters && Array.isArray(acc.characters)) {
+            charactersToImport.push(...acc.characters.map((char: any) => ({
+              accountId: acc.id,
+              name: char.name,
+              class: char.class,
+              lvl: char.lvl,
+            })));
+          }
+        }
+      }
+
+      localStorage.importData({
+        accounts: accountsToImport.length > 0 ? accountsToImport : undefined,
+        characters: charactersToImport.length > 0 ? charactersToImport : undefined,
+      });
+
+      toast({
+        title: "Demo cargada",
+        description: `Se cargaron ${accountsToImport.length} cuentas y ${charactersToImport.length} personajes de ejemplo`,
+      });
+
+      handleRefresh();
+    } catch (error) {
+      console.error("Error loading demo:", error);
+      toast({
+        title: "Error al cargar demo",
+        description: error instanceof Error ? error.message : "Error al cargar los datos de ejemplo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleClearAll = () => {
+    localStorage.clearAllData();
+    setSelectedAccountId(null);
+    handleRefresh();
+    toast({
+      title: "Datos eliminados",
+      description: "Todos los datos han sido eliminados",
+    });
+  };
 
   return (
     <div className="min-h-screen p-6 md:p-10 lg:p-12">
@@ -359,23 +415,75 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="lg:col-span-8 flex items-center justify-end gap-3 lg:gap-4">
+          <div className="lg:col-span-8 flex items-center justify-end gap-3 lg:gap-4 flex-wrap">
             {/* Reset all ticks button */}
-            <ROButton
-              variant="icon"
-              size="md"
-              onClick={() => {
-                setInstanceStatus({});
-                toast({
-                  title: "Ticks reseteados",
-                  description: "Todos los ticks de instancias han sido eliminados.",
-                });
-              }}
-              className="text-[#5a8bbd] hover:text-white hover:border-[#5a8bbd] w-12 h-12 lg:w-14 lg:h-14"
-              title="Reset all ticks for all accounts"
-            >
-              <RotateCcw className="w-5 h-5 lg:w-6 lg:h-6" />
-            </ROButton>
+            {hasData && (
+              <ROButton
+                variant="icon"
+                size="md"
+                onClick={() => {
+                  setInstanceStatus({});
+                  toast({
+                    title: "Ticks reseteados",
+                    description: "Todos los ticks de instancias han sido eliminados.",
+                  });
+                }}
+                className="text-[#5a8bbd] hover:text-white hover:border-[#5a8bbd] w-12 h-12 lg:w-14 lg:h-14"
+                title="Reset all ticks for all accounts"
+              >
+                <RotateCcw className="w-5 h-5 lg:w-6 lg:h-6" />
+              </ROButton>
+            )}
+            
+            {/* Botón de Demo (solo si no hay datos) */}
+            {!hasData && (
+              <button
+                onClick={handleLoadDemo}
+                className="flex items-center justify-center px-6 lg:px-8 h-14 lg:h-16 bg-[#5a8bbd]/20 border-2 border-[#5a8bbd]/50 rounded-lg hover:bg-[#5a8bbd]/30 hover:border-[#5a8bbd] transition-all text-sm lg:text-base font-semibold text-[#cedce7]"
+              >
+                Ver Demo con mis personajes
+              </button>
+            )}
+            
+            {/* Botón de Limpiar (solo si hay datos) */}
+            {hasData && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <ROButton
+                    variant="icon"
+                    size="md"
+                    className="w-12 h-12 lg:w-14 lg:h-14 hover:border-red-500 hover:text-red-400"
+                    title="Borrar todos los datos"
+                  >
+                    <Trash2 className="w-5 h-5 lg:w-6 lg:h-6" />
+                  </ROButton>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-[#102030] border-[#2b4e6b] text-[#a0c0e0]">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-white text-lg lg:text-xl">
+                      ¿Borrar todos los datos?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-[#a0c0e0] text-base lg:text-lg">
+                      Esta acción eliminará permanentemente todas las cuentas y personajes guardados.
+                      <br />
+                      <br />
+                      <strong className="text-red-400">Esta acción no se puede deshacer.</strong>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="gap-3">
+                    <AlertDialogCancel className="bg-transparent border-[#2b4e6b] text-[#a0c0e0] hover:bg-white/5 hover:text-white px-6 py-2 text-base">
+                      Cancelar
+                    </AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleClearAll}
+                      className="bg-red-900/50 border border-red-500 text-red-200 hover:bg-red-800 px-6 py-2 text-base"
+                    >
+                      Borrar Todo
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
             
             <input
               type="file"
@@ -386,18 +494,20 @@ export default function Dashboard() {
             />
             <label
               htmlFor="import-file-input"
-              className="flex items-center justify-center px-8 lg:px-10 w-auto min-w-[140px] lg:min-w-[160px] h-14 lg:h-16 bg-[#1c2b3a]/40 border border-[#2b4e6b]/30 rounded-lg hover:bg-[#5a8bbd]/10 transition-colors group cursor-pointer"
+              className="flex items-center justify-center px-8 lg:px-10 w-auto min-w-[140px] lg:min-w-[160px] h-14 lg:h-16 bg-[#1c2b3a]/40 border border-[#2b4e6b]/30 rounded-lg hover:bg-[#1c2b3a]/60 hover:border-[#5a8bbd]/50 transition-colors group cursor-pointer"
             >
               <Upload className="w-5 h-5 lg:w-6 lg:h-6 text-[#5a8bbd]/60 group-hover:text-[#5a8bbd] mr-3" />
               <span className="text-sm lg:text-base font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">Import</span>
             </label>
-            <button 
-              onClick={handleExport}
-              className="flex items-center justify-center px-8 lg:px-10 w-auto min-w-[140px] lg:min-w-[160px] h-14 lg:h-16 bg-[#1c2b3a]/40 border border-[#2b4e6b]/30 rounded-lg hover:bg-[#5a8bbd]/10 transition-colors group"
-            >
-              <Download className="w-5 h-5 lg:w-6 lg:h-6 text-[#5a8bbd]/60 group-hover:text-[#5a8bbd] mr-3" />
-              <span className="text-sm lg:text-base font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">Export</span>
-            </button>
+            {hasData && (
+              <button 
+                onClick={handleExport}
+                className="flex items-center justify-center px-8 lg:px-10 w-auto min-w-[140px] lg:min-w-[160px] h-14 lg:h-16 bg-[#1c2b3a]/40 border border-[#2b4e6b]/30 rounded-lg hover:bg-[#5a8bbd]/10 transition-colors group"
+              >
+                <Download className="w-5 h-5 lg:w-6 lg:h-6 text-[#5a8bbd]/60 group-hover:text-[#5a8bbd] mr-3" />
+                <span className="text-sm lg:text-base font-bold text-[#5a8bbd] tracking-widest uppercase group-hover:text-white transition-colors">Export</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -458,6 +568,33 @@ export default function Dashboard() {
         >
           {isLoadingAccounts ? (
             <div className="flex justify-center items-center h-full text-[#5a8bbd]">Loading crystals...</div>
+          ) : filteredAccounts.length === 0 && !hasData ? (
+            <div className="flex flex-col items-center justify-center h-full text-[#5a8bbd]/50 gap-6">
+              <User className="w-20 h-20 lg:w-24 lg:h-24 opacity-50" />
+              <p className="text-xl lg:text-2xl font-semibold">Sube tu archivo JSON de MuhRo para empezar</p>
+              <div className="flex flex-col sm:flex-row items-center gap-4 mt-4">
+                <button
+                  onClick={handleLoadDemo}
+                  className="flex items-center justify-center gap-2 px-6 lg:px-8 py-3 lg:py-4 bg-[#5a8bbd]/20 border-2 border-[#5a8bbd]/50 rounded-lg hover:bg-[#5a8bbd]/30 hover:border-[#5a8bbd] transition-all text-base lg:text-lg font-semibold text-[#cedce7]"
+                >
+                  Ver Demo con mis personajes
+                </button>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleImport}
+                  className="hidden"
+                  id="import-file-input-empty"
+                />
+                <label
+                  htmlFor="import-file-input-empty"
+                  className="flex items-center justify-center gap-2 px-6 lg:px-8 py-3 lg:py-4 bg-[#1c2b3a]/40 border-2 border-[#2b4e6b]/50 rounded-lg hover:bg-[#1c2b3a]/60 hover:border-[#5a8bbd]/50 transition-all cursor-pointer text-base lg:text-lg font-semibold text-[#cedce7]"
+                >
+                  <Upload className="w-5 h-5 lg:w-6 lg:h-6" />
+                  Importar JSON
+                </label>
+              </div>
+            </div>
           ) : filteredAccounts.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-[#5a8bbd]/50 gap-4">
               <User className="w-16 h-16 lg:w-20 lg:h-20 opacity-50" />
@@ -657,7 +794,33 @@ export default function Dashboard() {
               <div className="w-40 h-40 lg:w-48 lg:h-48 rounded-full border-4 border-[#2b4e6b] border-dashed flex items-center justify-center">
                 <Users className="w-16 h-16 lg:w-20 lg:h-20" />
               </div>
-              <p className="text-xl lg:text-2xl">Select an account to view characters</p>
+              <p className="text-xl lg:text-2xl">
+                {hasData ? "Select an account to view characters" : "Sube tu archivo JSON de MuhRo para empezar"}
+              </p>
+              {!hasData && (
+                <div className="flex flex-col sm:flex-row items-center gap-4 mt-4">
+                  <button
+                    onClick={handleLoadDemo}
+                    className="flex items-center justify-center gap-2 px-6 lg:px-8 py-3 lg:py-4 bg-[#5a8bbd]/20 border-2 border-[#5a8bbd]/50 rounded-lg hover:bg-[#5a8bbd]/30 hover:border-[#5a8bbd] transition-all text-base lg:text-lg font-semibold text-[#cedce7]"
+                  >
+                    Ver Demo con mis personajes
+                  </button>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImport}
+                    className="hidden"
+                    id="import-file-input-characters"
+                  />
+                  <label
+                    htmlFor="import-file-input-characters"
+                    className="flex items-center justify-center gap-2 px-6 lg:px-8 py-3 lg:py-4 bg-[#1c2b3a]/40 border-2 border-[#2b4e6b]/50 rounded-lg hover:bg-[#1c2b3a]/60 hover:border-[#5a8bbd]/50 transition-all cursor-pointer text-base lg:text-lg font-semibold text-[#cedce7]"
+                  >
+                    <Upload className="w-5 h-5 lg:w-6 lg:h-6" />
+                    Importar JSON
+                  </label>
+                </div>
+              )}
             </div>
           ) : isLoadingCharacters ? (
             <div className="h-full flex items-center justify-center text-[#5a8bbd] text-lg lg:text-xl">Summoning characters...</div>

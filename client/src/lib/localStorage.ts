@@ -220,3 +220,11 @@ export function hasData(): boolean {
   const characters = getCharacters();
   return accounts.length > 0 || characters.length > 0;
 }
+
+export function clearAllData(): void {
+  saveAccounts([]);
+  saveCharacters([]);
+  // Reinicializar IDs
+  nextAccountId = 1;
+  nextCharacterId = 1;
+}
