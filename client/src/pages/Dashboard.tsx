@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { useQueryClient } from "@tanstack/react-query";
 import * as localStorage from "@/lib/localStorage";
-import { t, getLanguage } from "@/lib/i18n";
+import { t, getLanguage, setLanguage, translations } from "@/lib/i18n";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
@@ -51,6 +51,13 @@ export default function Dashboard() {
     setHasData(localStorage.hasData());
     setCurrentLang(getLanguage());
   }, [accounts, allCharactersData]);
+
+  const handleLanguageChange = (lang: "es" | "en") => {
+    setLanguage(lang);
+    setCurrentLang(lang);
+    // Forzar re-render de toda la aplicación
+    window.location.reload();
+  };
 
   useEffect(() => {
     if (accounts) {
@@ -386,7 +393,39 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           <div className="lg:col-span-4 flex items-center gap-0 bg-[#0a1018]/80 border border-[#2b4e6b]/50 rounded-lg overflow-hidden shadow-2xl h-14 lg:h-16">
             <div className="flex-1 flex items-center relative h-full">
-              <Search className="absolute left-5 lg:left-6 top-1/2 -translate-y-1/2 w-5 h-5 lg:w-6 lg:h-6 text-[#5a8bbd]/40 pointer-events-none z-10" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="absolute left-5 lg:left-6 top-1/2 -translate-y-1/2 w-5 h-5 lg:w-6 lg:h-6 z-10 cursor-help">
+                    <Search className="w-full h-full text-[#5a8bbd]/40 hover:text-[#5a8bbd] transition-colors pointer-events-auto" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side="bottom" 
+                  align="start"
+                  className="bg-[#1c2b3a] border-[#2b4e6b] text-[#cedce7] p-4 max-w-md shadow-2xl"
+                >
+                  <div className="space-y-2">
+                    <h3 className="font-bold text-[#5a8bbd] text-sm mb-3 uppercase tracking-wider">
+                      {t("searchHelpTitle")}
+                    </h3>
+                    <div className="space-y-2 text-xs lg:text-sm">
+                      {translations[getLanguage()].searchHelpExamples.map((example: string, index: number) => (
+                        <div key={index} className="flex items-start gap-2">
+                          <span className="text-[#5a8bbd]/60 mt-0.5">•</span>
+                          <code className="text-[#a0c0e0] font-mono bg-[#0a1018]/50 px-2 py-1 rounded border border-[#2b4e6b]/30">
+                            {example}
+                          </code>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-[#2b4e6b]/50 text-xs text-[#5a8bbd]/70">
+                      {getLanguage() === "es" 
+                        ? "Puedes combinar múltiples condiciones separadas por espacios"
+                        : "You can combine multiple conditions separated by spaces"}
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
               <ROInput 
                 placeholder={t("searchPlaceholder")}
                 className="w-full h-full border-0 bg-[#0a1018]/80 pl-14 lg:pl-16 pr-5 lg:pr-6 text-base lg:text-lg text-left placeholder:text-[#2b4e6b]/40 placeholder:uppercase placeholder:text-xs lg:text-sm placeholder:tracking-widest focus:outline-none focus:ring-0"
@@ -494,6 +533,46 @@ export default function Dashboard() {
                 </AlertDialogContent>
               </AlertDialog>
             )}
+            
+            {/* Language Selector Buttons */}
+            <div className="flex items-center gap-2 mr-2 lg:mr-4">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => handleLanguageChange("es")}
+                    className={`flex items-center justify-center w-12 h-12 lg:w-14 lg:h-14 rounded-lg border-2 transition-all ${
+                      currentLang === "es"
+                        ? "bg-[#5a8bbd]/30 border-[#5a8bbd] text-[#5a8bbd]"
+                        : "bg-[#1c2b3a]/40 border-[#2b4e6b]/30 text-[#5a8bbd]/60 hover:bg-[#1c2b3a]/60 hover:border-[#5a8bbd]/50 hover:text-[#5a8bbd]"
+                    }`}
+                    title="Español"
+                  >
+                    <span className="text-2xl lg:text-3xl">🇪🇸</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Español</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => handleLanguageChange("en")}
+                    className={`flex items-center justify-center w-12 h-12 lg:w-14 lg:h-14 rounded-lg border-2 transition-all ${
+                      currentLang === "en"
+                        ? "bg-[#5a8bbd]/30 border-[#5a8bbd] text-[#5a8bbd]"
+                        : "bg-[#1c2b3a]/40 border-[#2b4e6b]/30 text-[#5a8bbd]/60 hover:bg-[#1c2b3a]/60 hover:border-[#5a8bbd]/50 hover:text-[#5a8bbd]"
+                    }`}
+                    title="English"
+                  >
+                    <span className="text-2xl lg:text-3xl">🇬🇧</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>English</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             
             <input
               type="file"

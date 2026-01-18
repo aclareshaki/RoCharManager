@@ -40,6 +40,14 @@ export const translations = {
     
     // Search
     searchPlaceholder: "BUSCAR CUENTA, PERSONAJE, CLASE, NIVEL (ej. >250)...",
+    searchHelpTitle: "Ejemplos de búsqueda",
+    searchHelpExamples: [
+      "Clase: Elemental master",
+      "Nivel: >250 o <100",
+      "Instancia no completada: -LOF, -HOL",
+      "Combinado: Elemental master + >250 + -LOF",
+      "Múltiples: Biolo >200 -NGH -HGH",
+    ],
     
     // Instance mode
     instanceMode: "Modo Instancias",
@@ -145,6 +153,14 @@ export const translations = {
     
     // Search
     searchPlaceholder: "SEARCH ACCOUNT, CHARACTER, CLASS, LEVEL (e.g. >250)...",
+    searchHelpTitle: "Search examples",
+    searchHelpExamples: [
+      "Class: Elemental master",
+      "Level: >250 or <100",
+      "Instance not completed: -LOF, -HOL",
+      "Combined: Elemental master + >250 + -LOF",
+      "Multiple: Biolo >200 -NGH -HGH",
+    ],
     
     // Instance mode
     instanceMode: "Instance Mode",
