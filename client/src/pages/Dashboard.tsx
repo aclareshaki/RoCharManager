@@ -5,12 +5,14 @@ import { ROPanel, ROButton, ROInput } from "@/components/ROPanel";
 import { ClassSprite } from "@/components/ClassSprite";
 import { AccountDialog } from "@/components/AccountDialog";
 import { CharacterDialog } from "@/components/CharacterDialog";
+import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { Search, Trash2, User, Users, Download, Upload, Edit, GripVertical, Grid3x3, List, Skull, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useQueryClient } from "@tanstack/react-query";
+import * as localStorage from "@/lib/localStorage";
 
 export default function Dashboard() {
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
@@ -26,9 +28,15 @@ export default function Dashboard() {
   // Estado de instancias por personaje (characterId -> instanceName -> checked)
   const [instanceStatus, setInstanceStatus] = useState<Record<number, Record<string, boolean>>>({});
   
+  const queryClient = useQueryClient();
   const { data: accounts, isLoading: isLoadingAccounts } = useAccounts();
   const { data: allCharactersData } = useCharacters();
   const [localAccounts, setLocalAccounts] = useState<any[]>([]);
+  const [hasData, setHasData] = useState(false);
+
+  useEffect(() => {
+    setHasData(localStorage.hasData());
+  }, [accounts, allCharactersData]);
 
   useEffect(() => {
     if (accounts) {
@@ -127,7 +135,7 @@ export default function Dashboard() {
     return hasMatchingChars || matchesAccountName;
   });
 
-  const onDragEnd = async (result: DropResult) => {
+  const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
     const items = Array.from(localAccounts);
@@ -136,58 +144,60 @@ export default function Dashboard() {
 
     setLocalAccounts(items);
 
-    try {
-      await apiRequest("POST", "/api/accounts/reorder", {
-        ids: items.map(a => a.id)
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/accounts"] });
-    } catch (error) {
-      setLocalAccounts(accounts || []);
-    }
+    // Update sortOrder based on new position
+    const updatedAccounts = items.map((acc, index) => ({
+      ...acc,
+      sortOrder: index,
+    }));
+
+    // Save to localStorage
+    localStorage.saveAccounts(updatedAccounts);
+    queryClient.invalidateQueries({ queryKey: ["accounts"] });
   };
 
   const handleExport = () => {
-    if (!accounts) return;
-    // In a real app we'd fetch EVERYTHING, here we just dump accounts 
-    // Character dump would require fetching all chars for all accounts or a specific export endpoint
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(accounts));
+    const data = localStorage.exportData();
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
     downloadAnchorNode.setAttribute("download", "ro_manager_export.json");
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
+    
+    toast({
+      title: "Exportación exitosa",
+      description: `Se exportaron ${data.accounts.length} cuentas y ${data.characters.length} personajes`,
+    });
   };
 
-  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = (e) => {
       try {
         const text = e.target?.result as string;
         const jsonData = JSON.parse(text);
 
-        // Handle different JSON formats from Replit export
+        // Handle different JSON formats
         let accountsToImport: any[] = [];
         let charactersToImport: any[] = [];
 
         // Format 1: Array of accounts (current export format)
         if (Array.isArray(jsonData)) {
           accountsToImport = jsonData.map((acc: any) => ({
+            id: acc.id,
             name: acc.name,
             sortOrder: acc.sortOrder || 0,
-            oldId: acc.id, // Keep old ID for mapping
           }));
 
           // If accounts have characters embedded
           for (const acc of jsonData) {
             if (acc.characters && Array.isArray(acc.characters)) {
-              // Map characters with old account ID for remapping
               charactersToImport.push(...acc.characters.map((char: any) => ({
-                accountId: acc.id, // Will be mapped in backend using oldAccountId
-                oldAccountId: acc.id, // Old account ID for mapping
+                accountId: acc.id,
                 name: char.name,
                 class: char.class,
                 lvl: char.lvl,
@@ -200,6 +210,7 @@ export default function Dashboard() {
           if (jsonData.accounts) {
             accountsToImport = Array.isArray(jsonData.accounts) 
               ? jsonData.accounts.map((acc: any) => ({
+                  id: acc.id,
                   name: acc.name,
                   sortOrder: acc.sortOrder || 0,
                 }))
@@ -219,7 +230,8 @@ export default function Dashboard() {
         // Format 3: Replit old format - object with accounts array
         else if (jsonData.accounts && typeof jsonData.accounts === 'object') {
           const accountsObj = jsonData.accounts;
-          accountsToImport = Object.values(accountsObj).map((acc: any) => ({
+          accountsToImport = Object.values(accountsObj).map((acc: any, index: number) => ({
+            id: index + 1,
             name: acc.name || acc,
             sortOrder: 0,
           }));
@@ -228,66 +240,27 @@ export default function Dashboard() {
         if (accountsToImport.length === 0 && charactersToImport.length === 0) {
           toast({
             title: "Error",
-            description: "No valid data found in JSON file",
+            description: "No se encontraron datos válidos en el archivo JSON",
             variant: "destructive",
           });
           return;
         }
 
         // Import data
-        try {
-          const response = await fetch("/api/import", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              accounts: accountsToImport.length > 0 ? accountsToImport : undefined,
-              characters: charactersToImport.length > 0 ? charactersToImport : undefined,
-            }),
-            credentials: "include",
-          });
+        localStorage.importData({
+          accounts: accountsToImport.length > 0 ? accountsToImport : undefined,
+          characters: charactersToImport.length > 0 ? charactersToImport : undefined,
+        });
 
-          const contentType = response.headers.get("content-type");
-          if (!response.ok) {
-            let errorMessage = `HTTP ${response.status}`;
-            if (contentType && contentType.includes("application/json")) {
-              try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorData.error || errorMessage;
-              } catch {
-                errorMessage = await response.text().catch(() => errorMessage);
-              }
-            } else {
-              errorMessage = `El servidor devolvió un error. Verifica que el servidor esté funcionando correctamente.`;
-            }
-            throw new Error(errorMessage);
-          }
+        toast({
+          title: "Importación exitosa",
+          description: `Se importaron ${accountsToImport.length} cuentas y ${charactersToImport.length} personajes`,
+        });
 
-          if (!contentType || !contentType.includes("application/json")) {
-            throw new Error("El servidor no devolvió una respuesta JSON válida");
-          }
-
-          const result = await response.json();
-          
-          toast({
-            title: "Importación exitosa",
-            description: `Se importaron ${result.imported.accounts} cuentas y ${result.imported.characters} personajes`,
-          });
-
-          // Refresh data
-          queryClient.invalidateQueries({ queryKey: ["/api/accounts"] });
-          queryClient.invalidateQueries({ queryKey: ["/api/characters"] });
-        } catch (apiError) {
-          console.error("Import API error:", apiError);
-          let errorMessage = "Error al importar los datos";
-          if (apiError instanceof Error) {
-            errorMessage = apiError.message;
-          }
-          toast({
-            title: "Error al importar",
-            description: errorMessage,
-            variant: "destructive",
-          });
-        }
+        // Refresh data
+        queryClient.invalidateQueries({ queryKey: ["accounts"] });
+        queryClient.invalidateQueries({ queryKey: ["characters"] });
+        setHasData(true);
 
         // Reset file input
         event.target.value = '';
@@ -302,6 +275,17 @@ export default function Dashboard() {
     };
     reader.readAsText(file);
   };
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["accounts"] });
+    queryClient.invalidateQueries({ queryKey: ["characters"] });
+    setHasData(localStorage.hasData());
+  };
+
+  // Show welcome screen if no data
+  if (!hasData && !isLoadingAccounts) {
+    return <WelcomeScreen onImport={handleRefresh} />;
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-8">

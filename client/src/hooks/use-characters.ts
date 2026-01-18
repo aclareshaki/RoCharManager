@@ -1,20 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl } from "@shared/routes";
 import type { InsertCharacter } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import * as localStorage from "@/lib/localStorage";
 
 export function useCharacters(accountId?: number) {
   return useQuery({
-    queryKey: accountId ? [api.characters.list.path, accountId] : [api.characters.list.path],
-    queryFn: async () => {
-      const url = accountId 
-        ? `${api.characters.list.path}?accountId=${accountId}` 
-        : api.characters.list.path;
-        
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch characters");
-      return api.characters.list.responses[200].parse(await res.json());
-    },
+    queryKey: accountId ? ["characters", accountId] : ["characters"],
+    queryFn: () => localStorage.getCharacters(accountId),
   });
 }
 
@@ -24,20 +16,14 @@ export function useCreateCharacter() {
 
   return useMutation({
     mutationFn: async (data: InsertCharacter) => {
-      const res = await fetch(api.characters.create.path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to create character");
-      }
-      return api.characters.create.responses[201].parse(await res.json());
+      return Promise.resolve(localStorage.createCharacter(data));
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ 
-        queryKey: [api.characters.list.path, variables.accountId] 
+        queryKey: ["characters", variables.accountId] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ["characters"] 
       });
       toast({ title: "Success", description: "Character created successfully" });
     },
@@ -53,18 +39,18 @@ export function useUpdateCharacter() {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: number } & Partial<InsertCharacter>) => {
-      const url = buildUrl(api.characters.update.path, { id });
-      const res = await fetch(url, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("Failed to update character");
-      return api.characters.update.responses[200].parse(await res.json());
+      const character = localStorage.getCharacters().find(c => c.id === id);
+      if (!character) throw new Error("Character not found");
+      
+      const updated = localStorage.updateCharacter(id, data);
+      return Promise.resolve(updated);
     },
-    onSuccess: (data) => {
+    onSuccess: (data: { id: number; accountId: number; name: string; class: string; lvl: number }) => {
       queryClient.invalidateQueries({ 
-        queryKey: [api.characters.list.path, data.accountId] 
+        queryKey: ["characters", data.accountId] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ["characters"] 
       });
       toast({ title: "Success", description: "Character updated successfully" });
     },
@@ -80,14 +66,16 @@ export function useDeleteCharacter() {
 
   return useMutation({
     mutationFn: async ({ id, accountId }: { id: number, accountId: number }) => {
-      const url = buildUrl(api.characters.delete.path, { id });
-      const res = await fetch(url, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete character");
-      return { id, accountId };
+      localStorage.deleteCharacter(id);
+      return Promise.resolve({ id, accountId });
     },
-    onSuccess: ({ accountId }) => {
+    onSuccess: (data: { id: number; accountId: number }) => {
+      const { accountId } = data;
       queryClient.invalidateQueries({ 
-        queryKey: [api.characters.list.path, accountId] 
+        queryKey: ["characters", accountId] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ["characters"] 
       });
       toast({ title: "Success", description: "Character deleted successfully" });
     },

@@ -1,16 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl } from "@shared/routes";
 import { type InsertAccount } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import * as localStorage from "@/lib/localStorage";
 
 export function useAccounts() {
   return useQuery({
-    queryKey: [api.accounts.list.path],
-    queryFn: async () => {
-      const res = await fetch(api.accounts.list.path);
-      if (!res.ok) throw new Error("Failed to fetch accounts");
-      return api.accounts.list.responses[200].parse(await res.json());
-    },
+    queryKey: ["accounts"],
+    queryFn: () => localStorage.getAccounts(),
   });
 }
 
@@ -20,19 +16,10 @@ export function useCreateAccount() {
 
   return useMutation({
     mutationFn: async (data: InsertAccount) => {
-      const res = await fetch(api.accounts.create.path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to create account");
-      }
-      return api.accounts.create.responses[201].parse(await res.json());
+      return Promise.resolve(localStorage.createAccount(data));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.accounts.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
       toast({ title: "Success", description: "Account created successfully" });
     },
     onError: (error: Error) => {
@@ -46,18 +33,12 @@ export function useUpdateAccount() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: number } & InsertAccount) => {
-      const url = buildUrl(api.accounts.update.path, { id });
-      const res = await fetch(url, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("Failed to update account");
-      return api.accounts.update.responses[200].parse(await res.json());
+    mutationFn: async ({ id, ...data }: { id: number } & Partial<InsertAccount>) => {
+      return Promise.resolve(localStorage.updateAccount(id, data));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.accounts.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["characters"] });
       toast({ title: "Success", description: "Account updated successfully" });
     },
     onError: (error: Error) => {
@@ -72,12 +53,12 @@ export function useDeleteAccount() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const url = buildUrl(api.accounts.delete.path, { id });
-      const res = await fetch(url, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete account");
+      localStorage.deleteAccount(id);
+      return Promise.resolve();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.accounts.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["characters"] });
       toast({ title: "Success", description: "Account deleted successfully" });
     },
     onError: (error: Error) => {

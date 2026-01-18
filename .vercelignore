@@ -1,0 +1,7 @@
+server/
+script/
+drizzle/
+local.db
+.env
+*.cjs
+dist/index.cjs
