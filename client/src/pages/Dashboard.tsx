@@ -502,7 +502,7 @@ export default function Dashboard() {
                     variant="icon"
                     size="md"
                     className="w-12 h-12 lg:w-14 lg:h-14 hover:border-red-500 hover:text-red-400"
-                    title="Borrar todos los datos"
+                    title={t("clearAll")}
                   >
                     <Trash2 className="w-5 h-5 lg:w-6 lg:h-6" />
                   </ROButton>
